@@ -129,12 +129,21 @@ add_library(
   layered_hardware_gazebo_plugins
   src/layered_hardware_gazebo_plugins.cpp
 )
+add_library(
+  GazeboLayeredHardware
+  src/gazebo_layered_hardware.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 add_dependencies(
   layered_hardware_gazebo_plugins
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+  ${catkin_EXPORTED_TARGETS}
+)
+add_dependencies(
+  GazeboLayeredHardware
   ${${PROJECT_NAME}_EXPORTED_TARGETS} 
   ${catkin_EXPORTED_TARGETS}
 )
@@ -157,6 +166,10 @@ add_dependencies(
 ## Specify libraries to link a library or executable target against
 target_link_libraries(
   layered_hardware_gazebo_plugins
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(
+  GazeboLayeredHardware
   ${catkin_LIBRARIES}
 )
 
