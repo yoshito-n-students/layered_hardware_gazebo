@@ -12,12 +12,18 @@
 #include <ros/node_handle.h>
 #include <ros/time.h>
 
+#include <gazebo/physics/physics.hh>
+
+#include <boost/shared_ptr.hpp>
+
 namespace layered_hardware_gazebo {
 
 class GazeboJointLayer : public lh::LayerBase {
 public:
   virtual bool init(hi::RobotHW *const hw, const ros::NodeHandle &param_nh,
                     const std::string &urdf_str) {}
+
+  bool setGazeboModel(const gzp::ModelPtr model) {}
 
   virtual bool prepareSwitch(const std::list< hi::ControllerInfo > &start_list,
                              const std::list< hi::ControllerInfo > &stop_list) {}
@@ -29,6 +35,9 @@ public:
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {}
 };
+
+typedef boost::shared_ptr< GazeboJointLayer > GazeboJointLayerPtr;
+typedef boost::shared_ptr< const GazeboJointLayer > GazeboJointLayerConstPtr;
 } // namespace layered_hardware_gazebo
 
 #endif
