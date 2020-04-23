@@ -1,0 +1,11 @@
+<library path="lib/liblayered_hardware_gazebo_plugins">
+
+  <class name="layered_hardware_gazebo/GazeboJointLayer"
+         type="layered_hardware_gazebo::GazeboJointLayer"
+         base_class_type="layered_hardware::LayerBase">
+    <description>
+      Hardware layer that handles joints in Gazebo simulator
+    </description>
+  </class>  
+
+</library>
