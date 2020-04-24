@@ -8,6 +8,7 @@
 #include <hardware_interface/robot_hw.h>
 #include <layered_hardware/layer_base.hpp>
 #include <layered_hardware_gazebo/common_namespaces.hpp>
+#include <ros/console.h>
 #include <ros/duration.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
@@ -21,17 +22,25 @@ namespace layered_hardware_gazebo {
 class GazeboJointLayer : public lh::LayerBase {
 public:
   virtual bool init(hi::RobotHW *const hw, const ros::NodeHandle &param_nh,
-                    const std::string &urdf_str) {}
+                    const std::string &urdf_str) {
+    return true;
+  }
 
-  bool setGazeboModel(const gzp::ModelPtr model) {}
+  bool setGazeboModel(const gzp::ModelPtr model) {
+    ROS_INFO_STREAM("GazeboJointLayer::setGazeboModel(): " << model->GetName());
+  }
 
   virtual bool prepareSwitch(const std::list< hi::ControllerInfo > &start_list,
-                             const std::list< hi::ControllerInfo > &stop_list) {}
+                             const std::list< hi::ControllerInfo > &stop_list) {
+    return true;
+  }
 
   virtual void doSwitch(const std::list< hi::ControllerInfo > &start_list,
                         const std::list< hi::ControllerInfo > &stop_list) {}
 
-  virtual void read(const ros::Time &time, const ros::Duration &period) {}
+  virtual void read(const ros::Time &time, const ros::Duration &period) {
+    ROS_INFO_STREAM("GazeboJointLayer::read(): " << time);
+  }
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {}
 };
