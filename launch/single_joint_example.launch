@@ -33,7 +33,52 @@
   <!-- ========================================= -->
   <!-- Embedded controllers on the virtual robot -->
 
+  <rosparam>
+      layered_hardware_gazebo:
+          simple_joint_example:
+              control_frequency: 20
+              # upper (controller-side) to bottom (hardware-side)
+              layers: [ joint_limits_layer, gazebo_joint_layer ]
+              joint_limits_layer:
+                  type: layered_hardware_extensions/ExtendedJointLimitsLayer
+              gazebo_joint_layer:
+                  type: layered_hardware_gazebo/GazeboJointLayer
+                  joints:
+                      axis:
+                          operation_mode_map:
+                              posvel_controller: effort_based_posvel
+                              position_controller: effort_based_position
+                              velocity_controller: effort_based_velocity
+                              effort_controller: effort
+  </rosparam>
+
   <!-- ==================== -->
   <!-- ROS-side controllers -->
+
+  <!-- Controller params -->
+  <rosparam>
+        joint_state_controller:
+            type: joint_state_controller/JointStateController
+            publish_rate: 20
+        posvel_controller:
+            type: posvel_controllers/JointPosVelController
+            joint: axis
+        position_controller:
+            type: position_controllers/JointPositionController
+            joint: axis
+        velocity_controller:
+            type: velocity_controllers/JointVelocityController
+            joint: axis
+        effort_controller:
+            type: effort_controllers/JointEffortController
+            joint: axis
+    </rosparam>
+
+    <!-- Controller starter -->
+    <node name="controller_starter" pkg="controller_manager" type="controller_manager" output="screen"
+          args="spawn joint_state_controller posvel_controller" />
+
+    <node name="controller_loader" pkg="controller_manager" type="controller_manager" output="screen"
+          args="load position_controller velocity_controller effort_controller" />
 
 </launch>

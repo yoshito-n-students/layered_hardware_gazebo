@@ -53,4 +53,8 @@
         </collision>
     </link>
 
+    <gazebo>
+        <plugin filename="libGazeboLayeredHardware.so" name="layered_hardware" />
+    </gazebo>
+
 </robot>
