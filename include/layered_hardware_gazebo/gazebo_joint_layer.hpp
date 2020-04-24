@@ -28,6 +28,8 @@ public:
 
   bool setGazeboModel(const gzp::ModelPtr model) {
     ROS_INFO_STREAM("GazeboJointLayer::setGazeboModel(): " << model->GetName());
+    // TODO: create joint bridges
+    return true;
   }
 
   virtual bool prepareSwitch(const std::list< hi::ControllerInfo > &start_list,
@@ -39,10 +41,12 @@ public:
                         const std::list< hi::ControllerInfo > &stop_list) {}
 
   virtual void read(const ros::Time &time, const ros::Duration &period) {
-    ROS_INFO_STREAM("GazeboJointLayer::read(): " << time);
+    // TODO: read from joint bridges
   }
 
-  virtual void write(const ros::Time &time, const ros::Duration &period) {}
+  virtual void write(const ros::Time &time, const ros::Duration &period) {
+    // TODO: write to joint bridges
+  }
 };
 
 typedef boost::shared_ptr< GazeboJointLayer > GazeboJointLayerPtr;
