@@ -25,7 +25,6 @@ public:
 
   void setGazeboJoint(const gzp::JointPtr joint) { joint_ = joint; }
 
-  // TODO: retrun bool to inform result of mode switching to the upper class
   virtual void starting() = 0;
 
   virtual void read(const ros::Time &time, const ros::Duration &period) = 0;
