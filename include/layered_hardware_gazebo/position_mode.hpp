@@ -20,7 +20,7 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 1e10);
     
-    data_->position_cmd = 0.;
+    data_->position_cmd = joint_->Position(0);
   }
 
   virtual void read(const ros::Time &time, const ros::Duration &period) {
