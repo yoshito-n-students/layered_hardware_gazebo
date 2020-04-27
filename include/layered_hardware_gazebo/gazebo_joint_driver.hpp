@@ -162,7 +162,7 @@ private:
     } else if (mode_str == "velocity") {
       return boost::make_shared< VelocityMode >(data_);
     }
-    ROS_ERROR_STREAM("GazeboJoint::makeOperationMode(): Unknown operation mode name '"
+    ROS_ERROR_STREAM("GazeboJointDriver::makeOperationMode(): Unknown operation mode name '"
                      << mode_str << " for the joint '" << name_ << "'");
     return OperationModePtr();
   }
