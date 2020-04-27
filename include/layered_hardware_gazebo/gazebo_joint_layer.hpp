@@ -31,13 +31,16 @@ namespace layered_hardware_gazebo {
 class GazeboJointLayer : public lh::LayerBase {
 public:
   GazeboJointLayer()
-      : joint_iface_loader_("transmission_interface", "transmission_interface::RequisiteProvider") {
-  }
+      : joint_iface_provider_loader_("transmission_interface",
+                                     "transmission_interface::RequisiteProvider") {}
 
   virtual ~GazeboJointLayer() {}
 
   virtual bool init(hi::RobotHW *const hw, const ros::NodeHandle &param_nh,
                     const std::string &urdf_str) {
+    ////////////////////////////////////////////////
+    // 1. register joint interfaces to the hardware
+
     // get transmission info, which contains info of joints' hardware interface, from URDF
     std::vector< ti::TransmissionInfo > trans_infos;
     if (!ti::TransmissionParser::parse(urdf_str, trans_infos)) {
@@ -61,7 +64,7 @@ public:
       // find a provider class for the joint hardware interface type
       const std::string &joint_iface_type(trans_map_val.first);
       const boost::shared_ptr< ti::RequisiteProvider > joint_iface_provider(
-          joint_iface_loader_.createInstance(joint_iface_type));
+          joint_iface_provider_loader_.createInstance(joint_iface_type));
       if (!joint_iface_provider) {
         ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to find a provider for the joint "
                          "hardware interface type '"
@@ -81,6 +84,9 @@ public:
         }
       }
     }
+
+    /////////////////////////
+    // 2. init joint drivers
 
     // get list of joints to be handled by this layer from params
     XmlRpc::XmlRpcValue joints_param;
@@ -168,7 +174,7 @@ public:
   }
 
 private:
-  pluginlib::ClassLoader< ti::RequisiteProvider > joint_iface_loader_;
+  pluginlib::ClassLoader< ti::RequisiteProvider > joint_iface_provider_loader_;
   ti::JointInterfaces joint_ifaces_;
   ti::RawJointDataMap joint_data_map_;
   std::vector< GazeboJointDriverPtr > joint_drivers_;
