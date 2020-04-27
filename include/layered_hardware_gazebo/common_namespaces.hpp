@@ -14,6 +14,8 @@ namespace layered_hardware {}
 
 namespace layered_hardware_gazebo {}
 
+namespace transmission_interface {}
+
 /////////////////////////
 // ailias under 'gazebo'
 
@@ -31,6 +33,7 @@ namespace gz = gazebo;
 namespace gzp = gz::physics;
 namespace hi = hardware_interface;
 namespace lh = layered_hardware;
+namespace ti = transmission_interface;
 } // namespace layered_hardware_gazebo
 
 #endif

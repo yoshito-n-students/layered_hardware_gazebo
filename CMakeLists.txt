@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   layered_hardware
   pluginlib
   roscpp
+  transmission_interface
   urdf
 )
 
@@ -109,7 +110,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES layered_hardware_gazebo_plugins
-  CATKIN_DEPENDS controller_manager gazebo_dev hardware_interface layered_hardware pluginlib roscpp urdf
+  CATKIN_DEPENDS controller_manager gazebo_dev hardware_interface layered_hardware pluginlib roscpp transmission_interface urdf
 #  DEPENDS system_lib
 )
 
