@@ -10,9 +10,11 @@
 #include <hardware_interface/robot_hw.h>
 #include <layered_hardware/layer_base.hpp>
 #include <layered_hardware_gazebo/common_namespaces.hpp>
+#include <layered_hardware_gazebo/gazebo_joint_driver.hpp>
 #include <pluginlib/class_loader.hpp>
 #include <ros/console.h>
 #include <ros/duration.h>
+#include <ros/names.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> // for RequisiteProvider
@@ -93,52 +95,83 @@ public:
       return false;
     }
 
-    // init joints' embedded controllers
+    // init joint drivers
     // (could not use BOOST_FOREACH here to avoid a bug in the library in Kinetic)
     for (XmlRpc::XmlRpcValue::iterator joint_param = joints_param.begin();
          joint_param != joints_param.end(); ++joint_param) {
+      // find joint data associated with hardware interfaces
       const std::string &joint_name(joint_param->first);
-
-      //
-      ti::RawJointDataMap::iterator joint_data_val(joint_data_map_.find(joint_name));
-      if (joint_data_val == joint_data_map_.end()) {
+      ti::RawJointDataMap::iterator joint_data_kv(joint_data_map_.find(joint_name));
+      if (joint_data_kv == joint_data_map_.end()) {
         ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to find data for the joint '"
                          << joint_name << "'");
         return false;
       }
 
-      // TODO: init joints
+      // init joint drivers widh data
+      const GazeboJointDriverPtr joint_driver(new GazeboJointDriver());
+      ti::RawJointData &joint_data(joint_data_kv->second);
+      ros::NodeHandle joint_param_nh(param_nh, ros::names::append("joints", joint_name));
+      if (!joint_driver->init(joint_name, &joint_data, joint_param_nh)) {
+        ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to init a driver for the joint '"
+                         << joint_name << "'");
+        return false;
+      }
+      ROS_INFO_STREAM("GazeboJointLayer::init: Initialized the gazebo joint '" << joint_name
+                                                                               << "'");
+      joint_drivers_.push_back(joint_driver);
     }
 
     return true;
   }
 
   bool setGazeboModel(const gzp::ModelPtr model) {
-    ROS_INFO_STREAM("GazeboJointLayer::setGazeboModel(): " << model->GetName());
-    // TODO: set joints to bridges
+    BOOST_FOREACH (const GazeboJointDriverPtr &driver, joint_drivers_) {
+      if (!driver->setGazeboModel(model)) {
+        return false;
+      }
+    }
     return true;
   }
 
   virtual bool prepareSwitch(const std::list< hi::ControllerInfo > &start_list,
                              const std::list< hi::ControllerInfo > &stop_list) {
+    // ask to all joint drivers if controller switching is possible
+    BOOST_FOREACH (const GazeboJointDriverPtr &driver, joint_drivers_) {
+      if (!driver->prepareSwitch(start_list, stop_list)) {
+        return false;
+      }
+    }
     return true;
   }
 
   virtual void doSwitch(const std::list< hi::ControllerInfo > &start_list,
-                        const std::list< hi::ControllerInfo > &stop_list) {}
+                        const std::list< hi::ControllerInfo > &stop_list) {
+    // notify controller switching to all joint drivers
+    BOOST_FOREACH (const GazeboJointDriverPtr &driver, joint_drivers_) {
+      driver->doSwitch(start_list, stop_list);
+    }
+  }
 
   virtual void read(const ros::Time &time, const ros::Duration &period) {
-    // TODO: read from joint bridges
+    // read from all joint drivers
+    BOOST_FOREACH (const GazeboJointDriverPtr &driver, joint_drivers_) {
+      driver->read(time, period);
+    }
   }
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {
-    // TODO: write to joint bridges
+    // write to all joint drivers
+    BOOST_FOREACH (const GazeboJointDriverPtr &driver, joint_drivers_) {
+      driver->write(time, period);
+    }
   }
 
 private:
   pluginlib::ClassLoader< ti::RequisiteProvider > joint_iface_loader_;
   ti::JointInterfaces joint_ifaces_;
   ti::RawJointDataMap joint_data_map_;
+  std::vector< GazeboJointDriverPtr > joint_drivers_;
 };
 
 typedef boost::shared_ptr< GazeboJointLayer > GazeboJointLayerPtr;
