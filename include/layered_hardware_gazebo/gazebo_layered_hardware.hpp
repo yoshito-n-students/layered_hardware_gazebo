@@ -25,7 +25,7 @@ public:
   void Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*/) {
     // ROS namespaces
     const std::string model_name(_model->GetName());
-    ros::NodeHandle nh(model_name), pnh(ros::names::append("/layered_hardware_gazebo", model_name));
+    ros::NodeHandle nh(model_name), pnh(ros::names::append(model_name, "layered_hardware_gazebo"));
 
     // activate ros-control layers
     hw_.reset(new lh::LayeredHardware());
@@ -45,8 +45,8 @@ public:
 
       // set the model to a layer found
       if (!layer->setGazeboModel(_model)) {
-        ROS_ERROR_STREAM("Failed to set the Gazebo model '" << model_name
-                                                            << "' to the layer [" << i << "]");
+        ROS_ERROR_STREAM("Failed to set the Gazebo model '" << model_name << "' to the layer [" << i
+                                                            << "]");
         return;
       }
     }
