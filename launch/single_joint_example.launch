@@ -1,84 +1,87 @@
 <launch>
 
-  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
-  <arg name="paused" default="false"/>
-  <arg name="use_sim_time" default="true"/>
-  <arg name="gui" default="true"/>
-  <arg name="headless" default="false"/>
-  <arg name="debug" default="false"/>
+    <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+    <arg name="paused" default="false"/>
+    <arg name="use_sim_time" default="true"/>
+    <arg name="gui" default="true"/>
+    <arg name="headless" default="false"/>
+    <arg name="debug" default="false"/>
 
-  <!-- ================= -->
-  <!-- Robot description -->
+    <!-- ================= -->
+    <!-- Robot description -->
 
-  <!-- Load the URDF into the ROS Parameter Server -->
-  <param name="robot_description" textfile="$(find layered_hardware_gazebo)/urdf/single_joint_example.urdf" />
+    <!-- Load the URDF into the ROS Parameter Server -->
+    <param name="robot_description" textfile="$(find layered_hardware_gazebo)/urdf/single_joint_example.urdf" />
 
-  <!-- ========================================= -->
-  <!-- Virtual robot & world in Gazebo simulator -->
+    <!-- ========================================= -->
+    <!-- Virtual robot & world in Gazebo simulator -->
 
-  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find layered_hardware_gazebo)/world/single_joint_example.world"/>
-    <arg name="debug" value="$(arg debug)" />
-    <arg name="gui" value="$(arg gui)" />
-    <arg name="paused" value="$(arg paused)"/>
-    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
-    <arg name="headless" value="$(arg headless)"/>
-  </include>
+    <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find layered_hardware_gazebo)/world/single_joint_example.world"/>
+        <arg name="debug" value="$(arg debug)" />
+        <arg name="gui" value="$(arg gui)" />
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+        <arg name="headless" value="$(arg headless)"/>
+    </include>
 
-  <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
-  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-    args="-urdf -model single_joint_example -param robot_description -z 1"/>
+    <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+          args="-urdf -model single_joint_example -param robot_description -z 1"/>
 
-  <!-- ========================================= -->
-  <!-- Embedded controllers on the virtual robot -->
+    <!-- ========================================= -->
+    <!-- Embedded controllers on the virtual robot -->
 
-  <rosparam>
-      layered_hardware_gazebo:
-          single_joint_example:
-              control_frequency: 20
-              # upper (controller-side) to bottom (hardware-side)
-              layers: [ joint_limits_layer, gazebo_joint_layer ]
-              joint_limits_layer:
-                  type: layered_hardware_extensions/ExtendedJointLimitsLayer
-              gazebo_joint_layer:
-                  type: layered_hardware_gazebo/GazeboJointLayer
-                  joints:
-                      axis:
-                          operation_mode_map:
-                              posvel_controller: effort_based_posvel
-                              position_controller: effort_based_position
-                              velocity_controller: effort_based_velocity
-                              effort_controller: effort
-  </rosparam>
-
-  <!-- ==================== -->
-  <!-- ROS-side controllers -->
-
-  <!-- Controller params -->
-  <rosparam>
-        joint_state_controller:
-            type: joint_state_controller/JointStateController
-            publish_rate: 20
-        posvel_controller:
-            type: posvel_controllers/JointPosVelController
-            joint: axis
-        position_controller:
-            type: position_controllers/JointPositionController
-            joint: axis
-        velocity_controller:
-            type: velocity_controllers/JointVelocityController
-            joint: axis
-        effort_controller:
-            type: effort_controllers/JointEffortController
-            joint: axis
+    <rosparam>
+        layered_hardware_gazebo:
+            single_joint_example:
+                control_frequency: 20
+                # upper (controller-side) to bottom (hardware-side)
+                layers: [ joint_limits_layer, gazebo_joint_layer ]
+                joint_limits_layer:
+                    type: layered_hardware_extensions/ExtendedJointLimitsLayer
+                gazebo_joint_layer:
+                    type: layered_hardware_gazebo/GazeboJointLayer
+                    joints:
+                        axis:
+                            operation_mode_map:
+                                # posvel_controller: effort_based_posvel
+                                position_controller: position
+                                velocity_controller: velocity
+                                effort_controller: effort
     </rosparam>
 
-    <!-- Controller starter -->
-    <node name="controller_starter" pkg="controller_manager" type="controller_manager" output="screen"
-          args="spawn joint_state_controller posvel_controller" />
+    <!-- ==================== -->
+    <!-- ROS-side controllers -->
 
-    <node name="controller_loader" pkg="controller_manager" type="controller_manager" output="screen"
-          args="load position_controller velocity_controller effort_controller" />
+    <group ns="single_joint_example">
+
+        <!-- Controller params -->
+        <rosparam>
+            joint_state_controller:
+                type: joint_state_controller/JointStateController
+                publish_rate: 20
+            posvel_controller:
+                type: posvel_controllers/JointPosVelController
+                joint: axis
+            position_controller:
+                type: position_controllers/JointPositionController
+                joint: axis
+            velocity_controller:
+                type: velocity_controllers/JointVelocityController
+                joint: axis
+            effort_controller:
+                type: effort_controllers/JointEffortController
+                joint: axis
+        </rosparam>
+
+        <!-- Controller starter -->
+        <node name="controller_starter" pkg="controller_manager" type="controller_manager" output="screen"
+            args="spawn joint_state_controller position_controller" />
+
+        <node name="controller_loader" pkg="controller_manager" type="controller_manager" output="screen"
+            args="load posvel_controller velocity_controller effort_controller" />
+    </group>
 
 </launch>
