@@ -10,6 +10,7 @@
 #include <layered_hardware_gazebo/effort_mode.hpp>
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
 #include <layered_hardware_gazebo/position_mode.hpp>
+#include <layered_hardware_gazebo/posvel_mode.hpp>
 #include <layered_hardware_gazebo/velocity_mode.hpp>
 #include <ros/duration.h>
 #include <ros/node_handle.h>
@@ -159,6 +160,8 @@ private:
       return boost::make_shared< EffortMode >(data_);
     } else if (mode_str == "position") {
       return boost::make_shared< PositionMode >(data_);
+    } else if (mode_str == "posvel") {
+      return boost::make_shared< PosVelMode >(data_);
     } else if (mode_str == "velocity") {
       return boost::make_shared< VelocityMode >(data_);
     }
