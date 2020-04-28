@@ -1,11 +1,15 @@
 #ifndef LAYERED_HARDWARE_GAZEBO_POSVEL_MODE_HPP
 #define LAYERED_HARDWARE_GAZEBO_POSVEL_MODE_HPP
 
+#include <cmath>
+
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
 #include <ros/duration.h>
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
+
+#include <boost/algorithm/clamp.hpp>
 
 namespace layered_hardware_gazebo {
 
@@ -31,8 +35,18 @@ public:
   }
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {
-    // TODO: saturate the position command based on profile velocity
-    joint_->SetPosition(0, data_->position_cmd, true);
+    namespace ba = boost::algorithm;
+
+    // velocity required to realize the desired position in the next simulation step
+    const double max_vel((data_->position_cmd - joint_->Position(0)) / period.toSec());
+    // velocity limit
+    const double vel_lim(std::abs(data_->velocity_cmd));
+    // clamp the required velocity with the limits
+    const double vel_cmd(ba::clamp(max_vel, -vel_lim, vel_lim));
+
+    // use SetParam("vel") instead of SetVelocity()
+    // to notify the desired velocity to the joint motor
+    joint_->SetParam("vel", 0, vel_cmd);
   }
 
   virtual void stopping() {
