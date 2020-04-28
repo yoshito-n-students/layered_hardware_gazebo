@@ -117,7 +117,7 @@ public:
         return false;
       }
 
-      // init joint drivers widh data
+      // init joint drivers with external data
       const GazeboJointDriverPtr joint_driver(new GazeboJointDriver());
       ti::RawJointData &joint_data(joint_data_kv->second);
       ros::NodeHandle joint_param_nh(param_nh, ros::names::append("joints", joint_name));
