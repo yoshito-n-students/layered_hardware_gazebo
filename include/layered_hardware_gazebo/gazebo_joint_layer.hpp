@@ -60,9 +60,9 @@ public:
     }
 
     // make joint hardware interfaces by using provider plugins to support any types of interfaces
-    BOOST_FOREACH (const TransmissionMap::value_type &trans_map_val, trans_map) {
+    BOOST_FOREACH (const TransmissionMap::value_type &trans_map_kv, trans_map) {
       // find a provider class for the joint hardware interface type
-      const std::string &joint_iface_type(trans_map_val.first);
+      const std::string &joint_iface_type(trans_map_kv.first);
       const boost::shared_ptr< ti::RequisiteProvider > joint_iface_provider(
           joint_iface_provider_loader_.createInstance(joint_iface_type));
       if (!joint_iface_provider) {
@@ -73,8 +73,8 @@ public:
       }
 
       // let the provider update hardware interfaces
-      const std::set< const ti::TransmissionInfo * > &trans_infos(trans_map_val.second);
-      BOOST_FOREACH (const ti::TransmissionInfo *trans_info, trans_infos) {
+      const std::set< const ti::TransmissionInfo * > &trans_set(trans_map_kv.second);
+      BOOST_FOREACH (const ti::TransmissionInfo *trans_info, trans_set) {
         if (!joint_iface_provider->updateJointInterfaces(*trans_info, hw, joint_ifaces_,
                                                          joint_data_map_)) {
           ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to provide the hardware interface of '"
@@ -82,6 +82,9 @@ public:
                            << trans_info->name_ << "'");
           return false;
         }
+        ROS_INFO_STREAM("GazeboJointLayer::init(): Updated the joint hardware interface '"
+                        << joint_iface_type << "' in the transmission '" << trans_info->name_
+                        << "'");
       }
     }
 
@@ -123,8 +126,8 @@ public:
                          << joint_name << "'");
         return false;
       }
-      ROS_INFO_STREAM("GazeboJointLayer::init: Initialized the gazebo joint '" << joint_name
-                                                                               << "'");
+      ROS_INFO_STREAM("GazeboJointLayer::init(): Initialized the gazebo joint '" << joint_name
+                                                                                 << "'");
       joint_drivers_.push_back(joint_driver);
     }
 
