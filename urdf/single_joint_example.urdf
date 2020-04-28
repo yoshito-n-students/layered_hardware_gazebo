@@ -22,6 +22,7 @@
         <parent link="base_link" />
         <child link="child_link" />
         <axis xyz="0 0 1" />
+        <limit effort="100." velocity="1." />
     </joint>
 
     <transmission name="trans">
