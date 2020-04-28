@@ -19,7 +19,7 @@ public:
     // enable ODE's joint motor function for effort-based velocity control
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 1e10);
-    
+
     data_->velocity_cmd = 0.;
   }
 
@@ -30,7 +30,9 @@ public:
   }
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {
-    joint_->SetVelocity(0, data_->velocity_cmd);
+    // use SetParam("vel") instead of SetVelocity()
+    // to notify the desired velocity to the joint motor
+    joint_->SetParam("vel", 0, data_->velocity_cmd);
   }
 
   virtual void stopping() {
