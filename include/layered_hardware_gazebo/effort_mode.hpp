@@ -19,7 +19,7 @@ public:
     // disable ODE's joint motor function or effort control does not work
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 0.);
-    
+
     data_->effort_cmd = 0.;
   }
 
@@ -33,9 +33,7 @@ public:
     joint_->SetForce(0, data_->effort_cmd);
   }
 
-  virtual void stopping() {
-    // nothing to do or zero effort ??
-  }
+  virtual void stopping() { joint_->SetForce(0, 0.); }
 };
 } // namespace layered_hardware_gazebo
 
