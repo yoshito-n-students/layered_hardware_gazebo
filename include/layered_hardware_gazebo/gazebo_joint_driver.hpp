@@ -9,6 +9,7 @@
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/effort_mode.hpp>
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
+#include <layered_hardware_gazebo/passive_mode.hpp>
 #include <layered_hardware_gazebo/position_mode.hpp>
 #include <layered_hardware_gazebo/posvel_mode.hpp>
 #include <layered_hardware_gazebo/velocity_mode.hpp>
@@ -158,6 +159,8 @@ private:
   OperationModePtr makeOperationMode(const std::string &mode_str) {
     if (mode_str == "effort") {
       return boost::make_shared< EffortMode >(data_);
+    } else if (mode_str == "passive") {
+      return boost::make_shared< PassiveMode >(data_);
     } else if (mode_str == "position") {
       return boost::make_shared< PositionMode >(data_);
     } else if (mode_str == "posvel") {

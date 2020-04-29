@@ -5,6 +5,7 @@ Changelog for package layered_hardware_gazebo
 0.0.2 (next version)
 --------------------
 * Add posvel operation mode (position mode with profile velocity)
+* Add passive operation mode
 * Fix velocity operation mode
 * Change parameter namespace to <robot_name>/layered_hardware_gazebo
 
