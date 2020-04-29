@@ -47,9 +47,14 @@
                         axis:
                             operation_mode_map:
                                 posvel_controller: posvel
-                                position_controller: position
+                                position_controller: position_pid
                                 velocity_controller: velocity
                                 effort_controller: effort
+                            position_pid:
+                                p: 10.
+                                i: 0.
+                                d: 2.
+                                publish_state: false
     </rosparam>
 
     <!-- ==================== -->
