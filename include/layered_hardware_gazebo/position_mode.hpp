@@ -23,6 +23,7 @@ public:
   virtual void starting() {
     // enable ODE's joint motor function for effort-based position control
     // (TODO: specialization for other physics engines)
+    // (TODO: fmax from joint effort limit)
     joint_->SetParam("fmax", 0, 1e10);
 
     data_->position = joint_->Position(0);
