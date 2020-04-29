@@ -4,6 +4,7 @@
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
 #include <ros/duration.h>
+#include <ros/node_handle.h>
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 
@@ -15,12 +16,15 @@ public:
 
   virtual ~PositionMode() {}
 
+  virtual bool init(const ros::NodeHandle &param_nh) { return true; }
+
   virtual void starting() {
     // enable ODE's joint motor function for effort-based position control
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 1e10);
 
-    data_->position_cmd = joint_->Position(0);
+    data_->position = joint_->Position(0);
+    data_->position_cmd = data_->position;
   }
 
   virtual void read(const ros::Time &time, const ros::Duration &period) {
@@ -30,7 +34,10 @@ public:
   }
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {
-    joint_->SetPosition(0, data_->position_cmd, true);
+    // use SetParam("vel") instead of SetVelocity()
+    // to notify the desired velocity to the joint motor
+    // joint_->SetParam("vel", 0, (data_->position_cmd - joint_->Position(0)) / period.toSec());
+    joint_->SetPosition(0, data_->position_cmd);
   }
 
   virtual void stopping() {

@@ -46,7 +46,7 @@ public:
     BOOST_FOREACH (const ModeNameMap::value_type &mode_name_kv, mode_name_map) {
       const std::string &controller_name(mode_name_kv.first);
       const std::string &mode_name(mode_name_kv.second);
-      const OperationModePtr mode(makeOperationMode(mode_name));
+      const OperationModePtr mode(makeOperationMode(mode_name, param_nh));
       if (!mode) {
         ROS_ERROR_STREAM("GazeboJointDriver::init(): Failed to make operation mode '"
                          << mode_name << "' for the joint '" << name << "'");
@@ -156,21 +156,33 @@ public:
   }
 
 private:
-  OperationModePtr makeOperationMode(const std::string &mode_str) {
+  OperationModePtr makeOperationMode(const std::string &mode_str, const ros::NodeHandle &param_nh) {
+    OperationModePtr mode;
     if (mode_str == "effort") {
-      return boost::make_shared< EffortMode >(data_);
+      mode.reset(new EffortMode(data_));
     } else if (mode_str == "passive") {
-      return boost::make_shared< PassiveMode >(data_);
+      mode.reset(new PassiveMode(data_));
     } else if (mode_str == "position") {
-      return boost::make_shared< PositionMode >(data_);
+      mode.reset(new PositionMode(data_));
     } else if (mode_str == "posvel") {
-      return boost::make_shared< PosVelMode >(data_);
+      mode.reset(new PosVelMode(data_));
     } else if (mode_str == "velocity") {
-      return boost::make_shared< VelocityMode >(data_);
+      mode.reset(new VelocityMode(data_));
     }
-    ROS_ERROR_STREAM("GazeboJointDriver::makeOperationMode(): Unknown operation mode name '"
-                     << mode_str << " for the joint '" << name_ << "'");
-    return OperationModePtr();
+    if (!mode) {
+      ROS_ERROR_STREAM("GazeboJointDriver::makeOperationMode(): Unknown operation mode name '"
+                       << mode_str << " for the joint '" << name_ << "'");
+      return OperationModePtr();
+    }
+
+    if (!mode->init(param_nh)) {
+      ROS_ERROR_STREAM(
+          "GazeboJointDriver::makeOperationMode(): Failed to initialize the operation mode '"
+          << mode_str << " for the joint '" << name_ << "'");
+      return OperationModePtr();
+    }
+
+    return mode;
   }
 
 private:

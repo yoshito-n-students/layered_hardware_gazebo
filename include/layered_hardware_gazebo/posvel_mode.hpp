@@ -6,6 +6,7 @@
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
 #include <ros/duration.h>
+#include <ros/node_handle.h>
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 
@@ -18,6 +19,8 @@ public:
   PosVelMode(ti::RawJointData *const data) : OperationModeBase("posvel", data) {}
 
   virtual ~PosVelMode() {}
+
+  virtual bool init(const ros::NodeHandle &param_nh) { return true; }
 
   virtual void starting() {
     // enable ODE's joint motor function for effort-based position control

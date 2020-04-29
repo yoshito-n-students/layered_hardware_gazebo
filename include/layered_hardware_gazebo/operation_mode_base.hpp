@@ -5,6 +5,7 @@
 
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <ros/duration.h>
+#include <ros/node_handle.h>
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> // for RawJointData
 
@@ -24,6 +25,8 @@ public:
   std::string getName() const { return name_; }
 
   void setGazeboJoint(const gzp::JointPtr joint) { joint_ = joint; }
+
+  virtual bool init(const ros::NodeHandle &param_nh) = 0;
 
   virtual void starting() = 0;
 
