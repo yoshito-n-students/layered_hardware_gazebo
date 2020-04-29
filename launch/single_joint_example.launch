@@ -46,7 +46,7 @@
                     joints:
                         axis:
                             operation_mode_map:
-                                # posvel_controller: effort_based_posvel
+                                posvel_controller: posvel
                                 position_controller: position
                                 velocity_controller: velocity
                                 effort_controller: effort
