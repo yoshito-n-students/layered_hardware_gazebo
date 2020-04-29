@@ -13,6 +13,7 @@
 #include <layered_hardware_gazebo/position_mode.hpp>
 #include <layered_hardware_gazebo/position_pid_mode.hpp>
 #include <layered_hardware_gazebo/posvel_mode.hpp>
+#include <layered_hardware_gazebo/posvel_pid_mode.hpp>
 #include <layered_hardware_gazebo/velocity_mode.hpp>
 #include <layered_hardware_gazebo/velocity_pid_mode.hpp>
 #include <ros/duration.h>
@@ -170,6 +171,8 @@ private:
       mode.reset(new PositionPIDMode(data_));
     } else if (mode_str == "posvel") {
       mode.reset(new PosVelMode(data_));
+    } else if (mode_str == "posvel_pid") {
+      mode.reset(new PosVelPIDMode(data_));
     } else if (mode_str == "velocity") {
       mode.reset(new VelocityMode(data_));
     } else if (mode_str == "velocity_pid") {
