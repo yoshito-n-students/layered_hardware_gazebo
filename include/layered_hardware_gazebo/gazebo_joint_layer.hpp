@@ -38,60 +38,9 @@ public:
 
   virtual bool init(hi::RobotHW *const hw, const ros::NodeHandle &param_nh,
                     const std::string &urdf_str) {
-    ////////////////////////////////////////////////
-    // 1. register joint interfaces to the hardware
+    /////////////////////////////////////////////////////////////////
+    // 1. get list of joints to be handled by this layer from params
 
-    // get transmission info, which contains info of joints' hardware interface, from URDF
-    std::vector< ti::TransmissionInfo > trans_infos;
-    if (!ti::TransmissionParser::parse(urdf_str, trans_infos)) {
-      ROS_ERROR("GazeboJointLayer::init(): Failed to parse transmissions from URDF");
-      return false;
-    }
-
-    // map transmissions by joints' hardware interface types
-    typedef std::map< std::string, std::set< const ti::TransmissionInfo * > > TransmissionMap;
-    TransmissionMap trans_map;
-    BOOST_FOREACH (const ti::TransmissionInfo &trans_info, trans_infos) {
-      BOOST_FOREACH (const ti::JointInfo &joint_info, trans_info.joints_) {
-        BOOST_FOREACH (const std::string &joint_iface_type, joint_info.hardware_interfaces_) {
-          trans_map[joint_iface_type].insert(&trans_info);
-        }
-      }
-    }
-
-    // make joint hardware interfaces by using provider plugins to support any types of interfaces
-    BOOST_FOREACH (const TransmissionMap::value_type &trans_map_kv, trans_map) {
-      // find a provider class for the joint hardware interface type
-      const std::string &joint_iface_type(trans_map_kv.first);
-      const boost::shared_ptr< ti::RequisiteProvider > joint_iface_provider(
-          joint_iface_provider_loader_.createInstance(joint_iface_type));
-      if (!joint_iface_provider) {
-        ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to find a provider for the joint "
-                         "hardware interface type '"
-                         << joint_iface_type << "'");
-        return false;
-      }
-
-      // let the provider update hardware interfaces
-      const std::set< const ti::TransmissionInfo * > &trans_set(trans_map_kv.second);
-      BOOST_FOREACH (const ti::TransmissionInfo *trans_info, trans_set) {
-        if (!joint_iface_provider->updateJointInterfaces(*trans_info, hw, joint_ifaces_,
-                                                         joint_data_map_)) {
-          ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to provide the hardware interface of '"
-                           << joint_iface_type << "' to joints in the transmission '"
-                           << trans_info->name_ << "'");
-          return false;
-        }
-        ROS_INFO_STREAM("GazeboJointLayer::init(): Updated the joint hardware interface '"
-                        << joint_iface_type << "' in the transmission '" << trans_info->name_
-                        << "'");
-      }
-    }
-
-    /////////////////////////
-    // 2. init joint drivers
-
-    // get list of joints to be handled by this layer from params
     XmlRpc::XmlRpcValue joints_param;
     if (!param_nh.getParam("joints", joints_param)) {
       ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to get param '"
@@ -104,7 +53,91 @@ public:
       return false;
     }
 
-    // init joint drivers
+    ////////////////////////////////////////////////
+    // 2. register joint interfaces to the hardware
+
+    // populate joint info from URDF
+    typedef std::map< std::string, ti::JointInfo > JointNameToInfo;
+    JointNameToInfo joint_name_to_info;
+    {
+      // get transmission info, which contains joint info, from URDF
+      std::vector< ti::TransmissionInfo > trans_infos;
+      if (!ti::TransmissionParser::parse(urdf_str, trans_infos)) {
+        ROS_ERROR("GazeboJointLayer::init(): Failed to parse transmissions from URDF");
+        return false;
+      }
+
+      // organize joint info in transmission info by joint names
+      BOOST_FOREACH (const ti::TransmissionInfo &trans_info, trans_infos) {
+        BOOST_FOREACH (const ti::JointInfo &joint_info_src, trans_info.joints_) {
+          // skip non-target joints
+          if (!joints_param.hasMember(joint_info_src.name_)) {
+            continue;
+          }
+
+          // update organized joint info
+          ti::JointInfo &joint_info_dst(joint_name_to_info[joint_info_src.name_]);
+          if (joint_info_dst.name_.empty()) {
+            joint_info_dst.name_ = joint_info_src.name_;
+          }
+          std::vector< std::string > &iface_types_dst(joint_info_dst.hardware_interfaces_);
+          BOOST_FOREACH (const std::string &iface_type_src, joint_info_src.hardware_interfaces_) {
+            if (std::find(iface_types_dst.begin(), iface_types_dst.end(), iface_type_src) !=
+                iface_types_dst.end()) {
+              continue;
+            }
+            iface_types_dst.push_back(iface_type_src);
+          }
+          if (joint_info_dst.xml_element_.empty()) {
+            joint_info_dst.xml_element_ = joint_info_src.xml_element_;
+          }
+        }
+      }
+    }
+
+    // organize joint infos by interface types
+    typedef std::map< std::string, std::vector< ti::JointInfo > > IfaceTypeToJointInfos;
+    IfaceTypeToJointInfos iface_type_to_joint_infos;
+    BOOST_FOREACH (const JointNameToInfo::value_type &kv, joint_name_to_info) {
+      const ti::JointInfo &joint_info(kv.second);
+      BOOST_FOREACH (const std::string &iface_type, joint_info.hardware_interfaces_) {
+        iface_type_to_joint_infos[iface_type].push_back(joint_info);
+      }
+    }
+
+    // make joint hardware interfaces by using provider plugins to support any types of interfaces
+    BOOST_FOREACH (const IfaceTypeToJointInfos::value_type &kv, iface_type_to_joint_infos) {
+      const std::string &iface_type(kv.first);
+      const std::vector< ti::JointInfo > &joint_infos(kv.second);
+
+      // find a provider class for the joint hardware interface type
+      const boost::shared_ptr< ti::RequisiteProvider > iface_provider(
+          joint_iface_provider_loader_.createInstance(iface_type));
+      if (!iface_provider) {
+        ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to find a provider for the joint "
+                         "hardware interface type '"
+                         << iface_type << "'");
+        return false;
+      }
+
+      // let the provider update hardware interfaces
+      BOOST_FOREACH (const ti::JointInfo &joint_info, joint_infos) {
+        ti::TransmissionInfo trans_info;
+        trans_info.joints_.push_back(joint_info);
+        if (!iface_provider->updateJointInterfaces(trans_info, hw, joint_ifaces_,
+                                                   joint_data_map_)) {
+          ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to provide the hardware interface of '"
+                           << iface_type << "' for the joint '" << joint_info.name_ << "'");
+          return false;
+        }
+        ROS_INFO_STREAM("GazeboJointLayer::init(): Updated the joint hardware interface '"
+                        << iface_type << "' for the joint '" << joint_info.name_ << "'");
+      }
+    }
+
+    /////////////////////////
+    // 3. init joint drivers
+
     // (could not use BOOST_FOREACH here to avoid a bug in the library in Kinetic)
     for (XmlRpc::XmlRpcValue::iterator joint_param = joints_param.begin();
          joint_param != joints_param.end(); ++joint_param) {
