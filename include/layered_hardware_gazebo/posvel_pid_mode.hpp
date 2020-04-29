@@ -12,6 +12,7 @@
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 
 #include <boost/algorithm/clamp.hpp>
+#include <boost/math/special_functions/fpclassify.hpp> // for isnan()
 
 namespace layered_hardware_gazebo {
 
@@ -55,7 +56,10 @@ public:
 
     const double vel_err(vel_cmd - joint_->GetVelocity(0));
     const double eff_cmd(pid_.computeCommand(vel_err, period));
-    joint_->SetForce(0, eff_cmd);
+
+    if (!boost::math::isnan(eff_cmd)) {
+      joint_->SetForce(0, eff_cmd);
+    }
   }
 
   virtual void stopping() {

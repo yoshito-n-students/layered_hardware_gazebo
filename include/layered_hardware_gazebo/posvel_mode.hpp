@@ -11,6 +11,7 @@
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 
 #include <boost/algorithm/clamp.hpp>
+#include <boost/math/special_functions/fpclassify.hpp> // for isnan()
 
 namespace layered_hardware_gazebo {
 
@@ -47,9 +48,11 @@ public:
     // clamp the required velocity with the limits
     const double vel_cmd(ba::clamp(max_vel, -vel_lim, vel_lim));
 
-    // use SetParam("vel") instead of SetVelocity()
-    // to notify the desired velocity to the joint motor
-    joint_->SetParam("vel", 0, vel_cmd);
+    if (!boost::math::isnan(vel_cmd)) {
+      // use SetParam("vel") instead of SetVelocity()
+      // to notify the desired velocity to the joint motor
+      joint_->SetParam("vel", 0, vel_cmd);
+    }
   }
 
   virtual void stopping() {

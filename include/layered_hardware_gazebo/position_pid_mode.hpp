@@ -9,6 +9,8 @@
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 
+#include <boost/math/special_functions/fpclassify.hpp> // for isnan()
+
 namespace layered_hardware_gazebo {
 
 class PositionPIDMode : public OperationModeBase {
@@ -41,7 +43,9 @@ public:
   virtual void write(const ros::Time &time, const ros::Duration &period) {
     const double pos_err(data_->position_cmd - joint_->Position(0));
     const double eff_cmd(pid_.computeCommand(pos_err, period));
-    joint_->SetForce(0, eff_cmd);
+    if (!boost::math::isnan(eff_cmd)) {
+      joint_->SetForce(0, eff_cmd);
+    }
   }
 
   virtual void stopping() { joint_->SetForce(0, 0.); }

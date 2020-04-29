@@ -8,6 +8,8 @@
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 
+#include <boost/math/special_functions/fpclassify.hpp> // for isnan()
+
 namespace layered_hardware_gazebo {
 
 class EffortMode : public OperationModeBase {
@@ -33,7 +35,9 @@ public:
   }
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {
-    joint_->SetForce(0, data_->effort_cmd);
+    if (!boost::math::isnan(data_->effort_cmd)) {
+      joint_->SetForce(0, data_->effort_cmd);
+    }
   }
 
   virtual void stopping() { joint_->SetForce(0, 0.); }
