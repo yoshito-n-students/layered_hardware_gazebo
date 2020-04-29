@@ -9,6 +9,7 @@ project(layered_hardware_gazebo)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   controller_manager
+  control_toolbox
   gazebo_dev
   hardware_interface
   layered_hardware
@@ -110,7 +111,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES layered_hardware_gazebo_plugins
-  CATKIN_DEPENDS controller_manager gazebo_dev hardware_interface layered_hardware pluginlib roscpp transmission_interface urdf
+  CATKIN_DEPENDS controller_manager control_toolbox gazebo_dev hardware_interface layered_hardware pluginlib roscpp transmission_interface urdf
 #  DEPENDS system_lib
 )
 

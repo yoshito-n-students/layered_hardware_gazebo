@@ -30,7 +30,10 @@ ___joints___ (struct, required)
 ### <u>Joint parameters (should be defined under <robot_name>/layered_hardware_gazebo/<layer_name>/joints/<joint_name>)</u>
 ___operation_mode_map___ (map<string, string>, required)
 * map from ROS's controller names to joint operation mode names
-* possible operation mode names are 'effort', 'passive', 'position', 'posvel', & 'velocity'
+* possible operation mode names are 'effort', 'passive', 'position', 'position_pid', 'posvel', 'velocity', & 'velocity_pid'
+
+___position_pid___, ___velocity_pid___ (struct, required when corresponding modes are used)
+* PID parameters which can be loaded by control_toolbox::Pid
 
 ## Example
 see [launch/single_joint_example.launch](launch/single_joint_example.launch)

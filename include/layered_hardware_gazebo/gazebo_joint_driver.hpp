@@ -11,8 +11,10 @@
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
 #include <layered_hardware_gazebo/passive_mode.hpp>
 #include <layered_hardware_gazebo/position_mode.hpp>
+#include <layered_hardware_gazebo/position_pid_mode.hpp>
 #include <layered_hardware_gazebo/posvel_mode.hpp>
 #include <layered_hardware_gazebo/velocity_mode.hpp>
+#include <layered_hardware_gazebo/velocity_pid_mode.hpp>
 #include <ros/duration.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
@@ -164,10 +166,14 @@ private:
       mode.reset(new PassiveMode(data_));
     } else if (mode_str == "position") {
       mode.reset(new PositionMode(data_));
+    } else if (mode_str == "position_pid") {
+      mode.reset(new PositionPIDMode(data_));
     } else if (mode_str == "posvel") {
       mode.reset(new PosVelMode(data_));
     } else if (mode_str == "velocity") {
       mode.reset(new VelocityMode(data_));
+    } else if (mode_str == "velocity_pid") {
+      mode.reset(new VelocityPIDMode(data_));
     }
     if (!mode) {
       ROS_ERROR_STREAM("GazeboJointDriver::makeOperationMode(): Unknown operation mode name '"
