@@ -36,7 +36,6 @@
     <rosparam>
         single_joint_example:
             layered_hardware_gazebo:
-                # control_frequency: 20 # supported in future
                 # upper (controller-side) to bottom (hardware-side)
                 layers: [ joint_limits_layer, gazebo_joint_layer ]
                 joint_limits_layer:
