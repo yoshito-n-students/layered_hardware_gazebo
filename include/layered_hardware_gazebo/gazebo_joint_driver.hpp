@@ -38,7 +38,6 @@ public:
   bool init(const std::string &name, ti::RawJointData *const data, const ros::NodeHandle &param_nh,
             const urdf::Joint &desc) {
     name_ = name;
-    data_ = data;
 
     typedef std::map< std::string, std::string > ModeNameMap;
     ModeNameMap mode_name_map;
@@ -50,7 +49,7 @@ public:
     BOOST_FOREACH (const ModeNameMap::value_type &mode_name_kv, mode_name_map) {
       const std::string &controller_name(mode_name_kv.first);
       const std::string &mode_name(mode_name_kv.second);
-      const OperationModePtr mode(makeOperationMode(mode_name, param_nh, desc));
+      const OperationModePtr mode(makeOperationMode(mode_name, data, param_nh, desc));
       if (!mode) {
         ROS_ERROR_STREAM("GazeboJointDriver::init(): Failed to make operation mode '"
                          << mode_name << "' for the joint '" << name << "'");
@@ -160,25 +159,25 @@ public:
   }
 
 private:
-  OperationModePtr makeOperationMode(const std::string &mode_str, const ros::NodeHandle &param_nh,
-                                     const urdf::Joint &desc) {
+  OperationModePtr makeOperationMode(const std::string &mode_str, ti::RawJointData *const data,
+                                     const ros::NodeHandle &param_nh, const urdf::Joint &desc) {
     OperationModePtr mode;
     if (mode_str == "effort") {
-      mode.reset(new EffortMode(data_, desc));
+      mode.reset(new EffortMode(data, desc));
     } else if (mode_str == "passive") {
-      mode.reset(new PassiveMode(data_));
+      mode.reset(new PassiveMode(data));
     } else if (mode_str == "position") {
-      mode.reset(new PositionMode(data_, desc));
+      mode.reset(new PositionMode(data, desc));
     } else if (mode_str == "position_pid") {
-      mode.reset(new PositionPIDMode(data_, desc));
+      mode.reset(new PositionPIDMode(data, desc));
     } else if (mode_str == "posvel") {
-      mode.reset(new PosVelMode(data_, desc));
+      mode.reset(new PosVelMode(data, desc));
     } else if (mode_str == "posvel_pid") {
-      mode.reset(new PosVelPIDMode(data_, desc));
+      mode.reset(new PosVelPIDMode(data, desc));
     } else if (mode_str == "velocity") {
-      mode.reset(new VelocityMode(data_, desc));
+      mode.reset(new VelocityMode(data, desc));
     } else if (mode_str == "velocity_pid") {
-      mode.reset(new VelocityPIDMode(data_, desc));
+      mode.reset(new VelocityPIDMode(data, desc));
     }
     if (!mode) {
       ROS_ERROR_STREAM("GazeboJointDriver::makeOperationMode(): Unknown operation mode name '"
@@ -200,7 +199,6 @@ private:
   typedef std::map< std::string, OperationModePtr > ModeMap;
 
   std::string name_;
-  ti::RawJointData *data_;
   ModeMap mode_map_;
   OperationModePtr present_mode_;
 };
