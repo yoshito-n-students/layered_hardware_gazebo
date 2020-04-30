@@ -37,6 +37,15 @@ public:
   virtual void stopping() = 0;
 
 protected:
+  static double Position(const gzp::JointPtr joint, const unsigned int index) {
+#if GAZEBO_MAJOR_VERSION >= 8
+    return joint->Position(index);
+#else
+    return *(joint->GetAngle(index));
+#endif
+  }
+
+protected:
   const std::string name_;
   ti::RawJointData *data_;
   gzp::JointPtr joint_;

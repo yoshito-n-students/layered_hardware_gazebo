@@ -40,7 +40,7 @@ public:
   }
 
   virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = joint_->Position(0);
+    data_->position = Position(joint_, 0);
     data_->velocity = joint_->GetVelocity(0);
     data_->effort = joint_->GetForce(0);
   }

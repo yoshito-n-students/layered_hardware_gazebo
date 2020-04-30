@@ -34,14 +34,14 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 0.);
 
-    data_->position = joint_->Position(0);
+    data_->position = Position(joint_, 0);
     data_->position_cmd = data_->position;
 
     pid_.reset();
   }
 
   virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = joint_->Position(0);
+    data_->position = Position(joint_, 0);
     data_->velocity = joint_->GetVelocity(0);
     data_->effort = joint_->GetForce(0);
   }
@@ -50,7 +50,7 @@ public:
     namespace ba = boost::algorithm;
     namespace bm = boost::math;
 
-    const double pos_err(data_->position_cmd - joint_->Position(0));
+    const double pos_err(data_->position_cmd - Position(joint_, 0));
     const double eff_cmd(ba::clamp(pid_.computeCommand(pos_err, period), -eff_lim_, eff_lim_));
     if (!bm::isnan(eff_cmd)) {
       joint_->SetForce(0, eff_cmd);

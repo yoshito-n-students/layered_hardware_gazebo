@@ -30,12 +30,12 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, eff_lim_);
 
-    data_->position = joint_->Position(0);
+    data_->position = Position(joint_, 0);
     data_->position_cmd = data_->position;
   }
 
   virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = joint_->Position(0);
+    data_->position = Position(joint_, 0);
     data_->velocity = joint_->GetVelocity(0);
     data_->effort = joint_->GetForce(0);
   }
@@ -43,7 +43,7 @@ public:
   virtual void write(const ros::Time &time, const ros::Duration &period) {
     namespace bm = boost::math;
 
-    const double vel_cmd((data_->position_cmd - joint_->Position(0)) / period.toSec());
+    const double vel_cmd((data_->position_cmd - Position(joint_,0)) / period.toSec());
     if (!bm::isnan(vel_cmd)) {
       // use SetParam("vel") instead of SetVelocity()
       // to notify the desired velocity to the joint motor

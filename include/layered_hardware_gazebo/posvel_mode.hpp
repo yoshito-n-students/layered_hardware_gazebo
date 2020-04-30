@@ -31,13 +31,13 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, eff_lim_);
 
-    data_->position = joint_->Position(0);
+    data_->position = Position(joint_, 0);
     data_->position_cmd = data_->position;
     data_->velocity_cmd = 0.;
   }
 
   virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = joint_->Position(0);
+    data_->position = Position(joint_, 0);
     data_->velocity = joint_->GetVelocity(0);
     data_->effort = joint_->GetForce(0);
   }
@@ -47,7 +47,7 @@ public:
     namespace bm = boost::math;
 
     // velocity required to realize the desired position in the next simulation step
-    const double max_vel((data_->position_cmd - joint_->Position(0)) / period.toSec());
+    const double max_vel((data_->position_cmd - Position(joint_, 0)) / period.toSec());
     // velocity limit
     const double vel_lim(std::abs(data_->velocity_cmd));
     // clamp the required velocity with the limits
