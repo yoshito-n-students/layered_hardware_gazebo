@@ -31,7 +31,8 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, eff_lim_);
 
-    data_->position_cmd = joint_->Position(0);
+    data_->position = joint_->Position(0);
+    data_->position_cmd = data_->position;
     data_->velocity_cmd = 0.;
   }
 
