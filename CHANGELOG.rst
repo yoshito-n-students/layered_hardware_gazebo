@@ -4,7 +4,7 @@ Changelog for package layered_hardware_gazebo
 
 0.0.3 (next version)
 --------------------
-* Clamp effort commands by joint limits in effort-based position/velocity operation modes
+* Clamp effort commands by joint limits in effort-based operation modes
 
 0.0.2 (2020-04-30)
 --------------------
@@ -16,7 +16,7 @@ Changelog for package layered_hardware_gazebo
 
 0.0.1 (2020-04-28)
 ------------------
-* Supported multiple types of hardware interfaces per joint
-* Supported any types of joint hardware interfaces (using transmission_interface::RequisiteProvider plugins)
+* Support multiple types of hardware interfaces per joint
+* Support any types of joint hardware interfaces (using transmission_interface::RequisiteProvider plugins)
 * Online switching of embedded joint operation modes
 * Contributors: Yoshito Okada
