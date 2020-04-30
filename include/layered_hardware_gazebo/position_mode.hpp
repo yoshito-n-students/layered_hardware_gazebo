@@ -1,12 +1,15 @@
 #ifndef LAYERED_HARDWARE_GAZEBO_POSITION_MODE_HPP
 #define LAYERED_HARDWARE_GAZEBO_POSITION_MODE_HPP
 
+#include <cmath>
+
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
 #include <ros/duration.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
+#include <urdf/model.h>
 
 #include <boost/math/special_functions/fpclassify.hpp> // for isnan()
 
@@ -14,7 +17,9 @@ namespace layered_hardware_gazebo {
 
 class PositionMode : public OperationModeBase {
 public:
-  PositionMode(ti::RawJointData *const data) : OperationModeBase("position", data) {}
+  PositionMode(ti::RawJointData *const data, const urdf::Joint &desc)
+      : OperationModeBase("position", data),
+        eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~PositionMode() {}
 
@@ -23,8 +28,7 @@ public:
   virtual void starting() {
     // enable ODE's joint motor function for effort-based position control
     // (TODO: specialization for other physics engines)
-    // (TODO: fmax from joint effort limit)
-    joint_->SetParam("fmax", 0, 1e10);
+    joint_->SetParam("fmax", 0, eff_lim_);
 
     data_->position = joint_->Position(0);
     data_->position_cmd = data_->position;
@@ -37,8 +41,10 @@ public:
   }
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {
+    namespace bm = boost::math;
+
     const double vel_cmd((data_->position_cmd - joint_->Position(0)) / period.toSec());
-    if (!boost::math::isnan(vel_cmd)) {
+    if (!bm::isnan(vel_cmd)) {
       // use SetParam("vel") instead of SetVelocity()
       // to notify the desired velocity to the joint motor
       joint_->SetParam("vel", 0, vel_cmd);
@@ -50,6 +56,9 @@ public:
     joint_->SetParam("fmax", 0, 0.);
     joint_->SetForce(0, 0.);
   }
+
+private:
+  const double eff_lim_;
 };
 } // namespace layered_hardware_gazebo
 

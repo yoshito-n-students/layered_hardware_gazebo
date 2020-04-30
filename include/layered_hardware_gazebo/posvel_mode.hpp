@@ -9,6 +9,7 @@
 #include <ros/node_handle.h>
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
+#include <urdf/model.h>
 
 #include <boost/algorithm/clamp.hpp>
 #include <boost/math/special_functions/fpclassify.hpp> // for isnan()
@@ -17,7 +18,9 @@ namespace layered_hardware_gazebo {
 
 class PosVelMode : public OperationModeBase {
 public:
-  PosVelMode(ti::RawJointData *const data) : OperationModeBase("posvel", data) {}
+  PosVelMode(ti::RawJointData *const data, const urdf::Joint &desc)
+      : OperationModeBase("posvel", data),
+        eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~PosVelMode() {}
 
@@ -26,7 +29,7 @@ public:
   virtual void starting() {
     // enable ODE's joint motor function for effort-based position control
     // (TODO: specialization for other physics engines)
-    joint_->SetParam("fmax", 0, 1e10);
+    joint_->SetParam("fmax", 0, eff_lim_);
 
     data_->position_cmd = joint_->Position(0);
     data_->velocity_cmd = 0.;
@@ -40,6 +43,7 @@ public:
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {
     namespace ba = boost::algorithm;
+    namespace bm = boost::math;
 
     // velocity required to realize the desired position in the next simulation step
     const double max_vel((data_->position_cmd - joint_->Position(0)) / period.toSec());
@@ -48,7 +52,7 @@ public:
     // clamp the required velocity with the limits
     const double vel_cmd(ba::clamp(max_vel, -vel_lim, vel_lim));
 
-    if (!boost::math::isnan(vel_cmd)) {
+    if (!bm::isnan(vel_cmd)) {
       // use SetParam("vel") instead of SetVelocity()
       // to notify the desired velocity to the joint motor
       joint_->SetParam("vel", 0, vel_cmd);
@@ -60,6 +64,9 @@ public:
     joint_->SetParam("fmax", 0, 0.);
     joint_->SetForce(0, 0.);
   }
+
+private:
+  const double eff_lim_;
 };
 } // namespace layered_hardware_gazebo
 

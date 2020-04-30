@@ -10,6 +10,7 @@
 #include <ros/node_handle.h>
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
+#include <urdf/model.h>
 
 #include <boost/algorithm/clamp.hpp>
 #include <boost/math/special_functions/fpclassify.hpp> // for isnan()
@@ -18,7 +19,9 @@ namespace layered_hardware_gazebo {
 
 class PosVelPIDMode : public OperationModeBase {
 public:
-  PosVelPIDMode(ti::RawJointData *const data) : OperationModeBase("posvel_pid", data) {}
+  PosVelPIDMode(ti::RawJointData *const data, const urdf::Joint &desc)
+      : OperationModeBase("posvel_pid", data),
+        eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~PosVelPIDMode() {}
 
@@ -46,6 +49,7 @@ public:
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {
     namespace ba = boost::algorithm;
+    namespace bm = boost::math;
 
     // velocity required to realize the desired position in the next simulation step
     const double max_vel((data_->position_cmd - joint_->Position(0)) / period.toSec());
@@ -55,9 +59,9 @@ public:
     const double vel_cmd(ba::clamp(max_vel, -vel_lim, vel_lim));
 
     const double vel_err(vel_cmd - joint_->GetVelocity(0));
-    const double eff_cmd(pid_.computeCommand(vel_err, period));
+    const double eff_cmd(ba::clamp(pid_.computeCommand(vel_err, period), -eff_lim_, eff_lim_));
 
-    if (!boost::math::isnan(eff_cmd)) {
+    if (!bm::isnan(eff_cmd)) {
       joint_->SetForce(0, eff_cmd);
     }
   }
@@ -69,6 +73,7 @@ public:
   }
 
 private:
+  const double eff_lim_;
   control_toolbox::Pid pid_;
 };
 } // namespace layered_hardware_gazebo

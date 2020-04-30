@@ -19,6 +19,7 @@
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> // for RequisiteProvider
 #include <transmission_interface/transmission_parser.h>
+#include <urdf/model.h>
 #include <xmlrpcpp/XmlRpcValue.h>
 
 #include <gazebo/physics/physics.hh>
@@ -135,14 +136,24 @@ public:
       }
     }
 
+    /////////////////////////////////////
+    // 3. build model skeleton from URDF
+
+    urdf::Model model_desc;
+    if (!model_desc.initString(urdf_str)) {
+      ROS_ERROR("GazeboJointLayer::init(): Failed to build a model skeleton from URDF");
+      return false;
+    }
+
     /////////////////////////
-    // 3. init joint drivers
+    // 4. init joint drivers
 
     // (could not use BOOST_FOREACH here to avoid a bug in the library in Kinetic)
     for (XmlRpc::XmlRpcValue::iterator joint_param = joints_param.begin();
          joint_param != joints_param.end(); ++joint_param) {
-      // find joint data associated with hardware interfaces
       const std::string &joint_name(joint_param->first);
+
+      // find joint data associated with hardware interfaces
       ti::RawJointDataMap::iterator joint_data_kv(joint_data_map_.find(joint_name));
       if (joint_data_kv == joint_data_map_.end()) {
         ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to find data for the joint '"
@@ -150,11 +161,20 @@ public:
         return false;
       }
 
+      // find joint model
+      const urdf::JointConstSharedPtr joint_desc(model_desc.getJoint(joint_name));
+      if (!joint_desc) {
+        ROS_ERROR_STREAM(
+            "GazeboJointLayer::init(): Failed to find description in URDF for the joint '"
+            << joint_name << "'");
+        return false;
+      }
+
       // init joint drivers with external data
       const GazeboJointDriverPtr joint_driver(new GazeboJointDriver());
       ti::RawJointData &joint_data(joint_data_kv->second);
       ros::NodeHandle joint_param_nh(param_nh, ros::names::append("joints", joint_name));
-      if (!joint_driver->init(joint_name, &joint_data, joint_param_nh)) {
+      if (!joint_driver->init(joint_name, &joint_data, joint_param_nh, *joint_desc)) {
         ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to init a driver for the joint '"
                          << joint_name << "'");
         return false;

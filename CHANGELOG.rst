@@ -2,6 +2,10 @@
 Changelog for package layered_hardware_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.3 (next version)
+--------------------
+* Clamp effort commands by joint limits in effort-based position/velocity operation modes
+
 0.0.2 (2020-04-30)
 --------------------
 * Add pisition/velocity/posvel PID operation mode (effort-based position/velocity/posvel mode)
