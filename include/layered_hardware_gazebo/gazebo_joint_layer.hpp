@@ -138,11 +138,11 @@ public:
     }
 
     /////////////////////////////////////
-    // 3. build model skeleton from URDF
+    // 3. build robot skeleton from URDF
 
-    urdf::Model model_desc;
-    if (!model_desc.initString(urdf_str)) {
-      ROS_ERROR("GazeboJointLayer::init(): Failed to build a model skeleton from URDF");
+    urdf::Model robot_desc;
+    if (!robot_desc.initString(urdf_str)) {
+      ROS_ERROR("GazeboJointLayer::init(): Failed to build a robot skeleton from URDF");
       return false;
     }
 
@@ -162,8 +162,8 @@ public:
       }
       ti::RawJointData *const joint_data(&joint_name_to_data_[joint_name]);
 
-      // find joint model
-      const urdf::JointConstSharedPtr joint_desc(model_desc.getJoint(joint_name));
+      // find joint description
+      const urdf::JointConstSharedPtr joint_desc(robot_desc.getJoint(joint_name));
       if (!joint_desc) {
         ROS_ERROR_STREAM(
             "GazeboJointLayer::init(): Failed to find description in URDF for the joint '"
