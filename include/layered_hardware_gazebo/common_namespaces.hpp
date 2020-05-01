@@ -5,6 +5,8 @@
 // common namespaces
 
 namespace gazebo {
+namespace common {}
+namespace event {}
 namespace physics {}
 } // namespace gazebo
 
@@ -30,6 +32,8 @@ namespace lhg = layered_hardware_gazebo;
 
 namespace layered_hardware_gazebo {
 namespace gz = gazebo;
+namespace gzc = gz::common;
+namespace gze = gz::event;
 namespace gzp = gz::physics;
 namespace hi = hardware_interface;
 namespace lh = layered_hardware;

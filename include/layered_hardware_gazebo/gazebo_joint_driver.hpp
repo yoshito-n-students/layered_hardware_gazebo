@@ -22,6 +22,7 @@
 #include <transmission_interface/transmission_interface_loader.h> // for RawJointData
 #include <urdf/model.h>
 
+#include <gazebo/common/common.hh>
 #include <gazebo/physics/physics.hh>
 
 #include <boost/foreach.hpp>
@@ -35,27 +36,36 @@ public:
 
   virtual ~GazeboJointDriver() {}
 
-  bool init(const std::string &name, ti::RawJointData *const data, const ros::NodeHandle &param_nh,
-            const urdf::Joint &desc) {
+  bool init(const std::string &name, const ros::NodeHandle &param_nh, const urdf::Joint &desc) {
     name_ = name;
 
-    typedef std::map< std::string, std::string > ModeNameMap;
-    ModeNameMap mode_name_map;
-    if (!param_nh.getParam("operation_mode_map", mode_name_map)) {
+    typedef std::map< std::string, std::string > ControllerToModeName;
+    ControllerToModeName controller_to_mode_name;
+    if (!param_nh.getParam("operation_mode_map", controller_to_mode_name)) {
       ROS_ERROR_STREAM("GazeboJointDriver::init(): Failed to get param '"
                        << param_nh.resolveName("operation_mode_map") << "'");
       return false;
     }
-    BOOST_FOREACH (const ModeNameMap::value_type &mode_name_kv, mode_name_map) {
-      const std::string &controller_name(mode_name_kv.first);
-      const std::string &mode_name(mode_name_kv.second);
-      const OperationModePtr mode(makeOperationMode(mode_name, data, param_nh, desc));
+    BOOST_FOREACH (const ControllerToModeName::value_type &kv, controller_to_mode_name) {
+      const std::string &controller_name(kv.first);
+      const std::string &mode_name(kv.second);
+      const OperationModePtr mode(makeOperationMode(mode_name, param_nh, desc));
       if (!mode) {
         ROS_ERROR_STREAM("GazeboJointDriver::init(): Failed to make operation mode '"
                          << mode_name << "' for the joint '" << name << "'");
         return false;
       }
-      mode_map_[controller_name] = mode;
+      controller_name_to_mode[controller_name] = mode;
+    }
+
+    // update joint operation mode (embedded controller) on every simulation step
+    update_connection_ =
+        gze::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboJointDriver::update, this, _1));
+    if (!update_connection_) {
+      ROS_ERROR_STREAM("GazeboJointDriver::init(): Failed to scheduling update of operation modes "
+                       "for the joint '"
+                       << name << "'");
+      return false;
     }
 
     return true;
@@ -69,10 +79,13 @@ public:
       return false;
     }
 
-    BOOST_FOREACH (ModeMap::value_type &mode_kv, mode_map_) {
-      const OperationModePtr &mode(mode_kv.second);
+    BOOST_FOREACH (ControllerNameToMode::value_type &kv, controller_name_to_mode) {
+      const OperationModePtr &mode(kv.second);
       mode->setGazeboJoint(joint);
     }
+
+    const gzc::Time time(model->GetWorld()->SimTime());
+    last_update_time_ = ros::Time(time.sec, time.nsec);
 
     return true;
   }
@@ -87,8 +100,10 @@ public:
     // number of modes after stopping controllers
     if (n_modes != 0) {
       BOOST_FOREACH (const hi::ControllerInfo &stopping_controller, stopping_controller_list) {
-        const ModeMap::const_iterator mode_to_stop(mode_map_.find(stopping_controller.name));
-        if (mode_to_stop != mode_map_.end() && mode_to_stop->second == present_mode_) {
+        const ControllerNameToMode::const_iterator mode_to_stop(
+            controller_name_to_mode.find(stopping_controller.name));
+        if (mode_to_stop != controller_name_to_mode.end() &&
+            mode_to_stop->second == present_mode_) {
           n_modes = 0;
           break;
         }
@@ -97,8 +112,9 @@ public:
 
     // number of modes after starting controllers
     BOOST_FOREACH (const hi::ControllerInfo &starting_controller, starting_controller_list) {
-      const ModeMap::const_iterator mode_to_start(mode_map_.find(starting_controller.name));
-      if (mode_to_start != mode_map_.end() && mode_to_start->second) {
+      const ControllerNameToMode::const_iterator mode_to_start(
+          controller_name_to_mode.find(starting_controller.name));
+      if (mode_to_start != controller_name_to_mode.end() && mode_to_start->second) {
         ++n_modes;
       }
     }
@@ -119,8 +135,10 @@ public:
     // stop joint's operation mode according to stopping controller list
     if (present_mode_) {
       BOOST_FOREACH (const hi::ControllerInfo &stopping_controller, stopping_controller_list) {
-        const ModeMap::const_iterator mode_to_stop(mode_map_.find(stopping_controller.name));
-        if (mode_to_stop != mode_map_.end() && mode_to_stop->second == present_mode_) {
+        const ControllerNameToMode::const_iterator mode_to_stop(
+            controller_name_to_mode.find(stopping_controller.name));
+        if (mode_to_stop != controller_name_to_mode.end() &&
+            mode_to_stop->second == present_mode_) {
           ROS_INFO_STREAM("GazeboJointDriver::doSwitch(): Stopping the operation mode '"
                           << present_mode_->getName() << "' for the joint '" << name_ << "'");
           present_mode_->stopping();
@@ -133,8 +151,9 @@ public:
     // start joint's operation mode according to starting controllers
     if (!present_mode_) {
       BOOST_FOREACH (const hi::ControllerInfo &starting_controller, starting_controller_list) {
-        const ModeMap::const_iterator mode_to_start(mode_map_.find(starting_controller.name));
-        if (mode_to_start != mode_map_.end() && mode_to_start->second) {
+        const ControllerNameToMode::const_iterator mode_to_start(
+            controller_name_to_mode.find(starting_controller.name));
+        if (mode_to_start != controller_name_to_mode.end() && mode_to_start->second) {
           ROS_INFO_STREAM("GazeboJointDriver::doSwitch(): Starting the operating mode '"
                           << mode_to_start->second->getName() << "' for the joint '" << name_
                           << "'");
@@ -146,38 +165,47 @@ public:
     }
   }
 
-  void read(const ros::Time &time, const ros::Duration &period) {
+  void read(ti::RawJointData *const data) {
     if (present_mode_) {
-      present_mode_->read(time, period);
+      present_mode_->read(data);
     }
   }
 
-  void write(const ros::Time &time, const ros::Duration &period) {
+  void write(ti::RawJointData &data) {
     if (present_mode_) {
-      present_mode_->write(time, period);
+      present_mode_->write(data);
+    }
+  }
+
+  void update(const gzc::UpdateInfo &info) {
+    if (present_mode_) {
+      const ros::Time time(info.simTime.sec, info.simTime.nsec);
+      const ros::Duration period(time - last_update_time_);
+      present_mode_->update(time, period);
+      last_update_time_ = time;
     }
   }
 
 private:
-  OperationModePtr makeOperationMode(const std::string &mode_str, ti::RawJointData *const data,
-                                     const ros::NodeHandle &param_nh, const urdf::Joint &desc) {
+  OperationModePtr makeOperationMode(const std::string &mode_str, const ros::NodeHandle &param_nh,
+                                     const urdf::Joint &desc) {
     OperationModePtr mode;
     if (mode_str == "effort") {
-      mode.reset(new EffortMode(data, desc));
+      mode.reset(new EffortMode(desc));
     } else if (mode_str == "passive") {
-      mode.reset(new PassiveMode(data));
+      mode.reset(new PassiveMode());
     } else if (mode_str == "position") {
-      mode.reset(new PositionMode(data, desc));
+      mode.reset(new PositionMode(desc));
     } else if (mode_str == "position_pid") {
-      mode.reset(new PositionPIDMode(data, desc));
+      mode.reset(new PositionPIDMode(desc));
     } else if (mode_str == "posvel") {
-      mode.reset(new PosVelMode(data, desc));
+      mode.reset(new PosVelMode(desc));
     } else if (mode_str == "posvel_pid") {
-      mode.reset(new PosVelPIDMode(data, desc));
+      mode.reset(new PosVelPIDMode(desc));
     } else if (mode_str == "velocity") {
-      mode.reset(new VelocityMode(data, desc));
+      mode.reset(new VelocityMode(desc));
     } else if (mode_str == "velocity_pid") {
-      mode.reset(new VelocityPIDMode(data, desc));
+      mode.reset(new VelocityPIDMode(desc));
     }
     if (!mode) {
       ROS_ERROR_STREAM("GazeboJointDriver::makeOperationMode(): Unknown operation mode name '"
@@ -196,11 +224,13 @@ private:
   }
 
 private:
-  typedef std::map< std::string, OperationModePtr > ModeMap;
+  typedef std::map< std::string, OperationModePtr > ControllerNameToMode;
 
   std::string name_;
-  ModeMap mode_map_;
+  ControllerNameToMode controller_name_to_mode;
   OperationModePtr present_mode_;
+  gze::ConnectionPtr update_connection_;
+  ros::Time last_update_time_;
 };
 
 typedef boost::shared_ptr< GazeboJointDriver > GazeboJointDriverPtr;

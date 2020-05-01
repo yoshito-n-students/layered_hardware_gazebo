@@ -19,8 +19,8 @@ namespace layered_hardware_gazebo {
 
 class PositionPIDMode : public OperationModeBase {
 public:
-  PositionPIDMode(ti::RawJointData *const data, const urdf::Joint &desc)
-      : OperationModeBase("position_pid", data),
+  PositionPIDMode(const urdf::Joint &desc)
+      : OperationModeBase("position_pid"),
         eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~PositionPIDMode() {}
@@ -34,25 +34,24 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 0.);
 
-    data_->position = Position(joint_, 0);
-    data_->position_cmd = data_->position;
+    pos_cmd_ = Position(joint_, 0);
 
     pid_.reset();
   }
 
-  virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = Position(joint_, 0);
-    data_->velocity = joint_->GetVelocity(0);
-    data_->effort = joint_->GetForce(0);
+  virtual void read(ti::RawJointData *const data) {
+    data->position = Position(joint_, 0);
+    data->velocity = joint_->GetVelocity(0);
+    data->effort = joint_->GetForce(0);
   }
 
-  virtual void write(const ros::Time &time, const ros::Duration &period) {
-    namespace ba = boost::algorithm;
-    namespace bm = boost::math;
+  virtual void write(const ti::RawJointData &data) { pos_cmd_ = data.position_cmd; }
 
-    const double pos_err(data_->position_cmd - Position(joint_, 0));
-    const double eff_cmd(ba::clamp(pid_.computeCommand(pos_err, period), -eff_lim_, eff_lim_));
-    if (!bm::isnan(eff_cmd)) {
+  virtual void update(const ros::Time &time, const ros::Duration &period) {
+    const double pos_err(pos_cmd_ - Position(joint_, 0));
+    const double eff_cmd(
+        boost::algorithm::clamp(pid_.computeCommand(pos_err, period), -eff_lim_, eff_lim_));
+    if (!boost::math::isnan(eff_cmd)) {
       joint_->SetForce(0, eff_cmd);
     }
   }
@@ -61,6 +60,7 @@ public:
 
 private:
   const double eff_lim_;
+  double pos_cmd_;
   control_toolbox::Pid pid_;
 };
 } // namespace layered_hardware_gazebo

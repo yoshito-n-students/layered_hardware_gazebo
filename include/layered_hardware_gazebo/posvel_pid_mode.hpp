@@ -19,8 +19,8 @@ namespace layered_hardware_gazebo {
 
 class PosVelPIDMode : public OperationModeBase {
 public:
-  PosVelPIDMode(ti::RawJointData *const data, const urdf::Joint &desc)
-      : OperationModeBase("posvel_pid", data),
+  PosVelPIDMode(const urdf::Joint &desc)
+      : OperationModeBase("posvel_pid"),
         eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~PosVelPIDMode() {}
@@ -34,34 +34,32 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 0.);
 
-    data_->position = Position(joint_, 0);
-    data_->position_cmd = data_->position;
-    data_->velocity_cmd = 0.;
+    pos_cmd_ = Position(joint_, 0);
+    vel_lim_ = 0.;
 
     pid_.reset();
   }
 
-  virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = Position(joint_, 0);
-    data_->velocity = joint_->GetVelocity(0);
-    data_->effort = joint_->GetForce(0);
+  virtual void read(ti::RawJointData *const data) {
+    data->position = Position(joint_, 0);
+    data->velocity = joint_->GetVelocity(0);
+    data->effort = joint_->GetForce(0);
   }
 
-  virtual void write(const ros::Time &time, const ros::Duration &period) {
-    namespace ba = boost::algorithm;
-    namespace bm = boost::math;
+  virtual void write(const ti::RawJointData &data) {
+    pos_cmd_ = data.position_cmd;
+    vel_lim_ = std::abs(data.velocity_cmd);
+  }
 
+  virtual void update(const ros::Time &time, const ros::Duration &period) {
     // velocity required to realize the desired position in the next simulation step
-    const double max_vel((data_->position_cmd - Position(joint_, 0)) / period.toSec());
-    // velocity limit
-    const double vel_lim(std::abs(data_->velocity_cmd));
+    const double vel_max((pos_cmd_ - Position(joint_, 0)) / period.toSec());
     // clamp the required velocity with the limits
-    const double vel_cmd(ba::clamp(max_vel, -vel_lim, vel_lim));
-
+    const double vel_cmd(boost::algorithm::clamp(vel_max, -vel_lim_, vel_lim_));
     const double vel_err(vel_cmd - joint_->GetVelocity(0));
-    const double eff_cmd(ba::clamp(pid_.computeCommand(vel_err, period), -eff_lim_, eff_lim_));
-
-    if (!bm::isnan(eff_cmd)) {
+    const double eff_cmd(
+        boost::algorithm::clamp(pid_.computeCommand(vel_err, period), -eff_lim_, eff_lim_));
+    if (!boost::math::isnan(eff_cmd)) {
       joint_->SetForce(0, eff_cmd);
     }
   }
@@ -74,6 +72,7 @@ public:
 
 private:
   const double eff_lim_;
+  double pos_cmd_, vel_lim_;
   control_toolbox::Pid pid_;
 };
 } // namespace layered_hardware_gazebo

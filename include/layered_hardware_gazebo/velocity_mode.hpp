@@ -17,8 +17,8 @@ namespace layered_hardware_gazebo {
 
 class VelocityMode : public OperationModeBase {
 public:
-  VelocityMode(ti::RawJointData *const data, const urdf::Joint &desc)
-      : OperationModeBase("velocity", data),
+  VelocityMode(const urdf::Joint &desc)
+      : OperationModeBase("velocity"),
         eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~VelocityMode() {}
@@ -30,22 +30,22 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, eff_lim_);
 
-    data_->velocity_cmd = 0.;
+    vel_cmd_ = 0.;
   }
 
-  virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = Position(joint_, 0);
-    data_->velocity = joint_->GetVelocity(0);
-    data_->effort = joint_->GetForce(0);
+  virtual void read(ti::RawJointData *const data) {
+    data->position = Position(joint_, 0);
+    data->velocity = joint_->GetVelocity(0);
+    data->effort = joint_->GetForce(0);
   }
 
-  virtual void write(const ros::Time &time, const ros::Duration &period) {
-    namespace bm = boost::math;
+  virtual void write(const ti::RawJointData &data) { vel_cmd_ = data.velocity_cmd; }
 
-    if (!bm::isnan(data_->velocity_cmd)) {
+  virtual void update(const ros::Time &time, const ros::Duration &period) {
+    if (!boost::math::isnan(vel_cmd_)) {
       // use SetParam("vel") instead of SetVelocity()
       // to notify the desired velocity to the joint motor
-      joint_->SetParam("vel", 0, data_->velocity_cmd);
+      joint_->SetParam("vel", 0, vel_cmd_);
     }
   }
 
@@ -57,6 +57,7 @@ public:
 
 private:
   const double eff_lim_;
+  double vel_cmd_;
 };
 } // namespace layered_hardware_gazebo
 

@@ -18,9 +18,8 @@ namespace layered_hardware_gazebo {
 
 class EffortMode : public OperationModeBase {
 public:
-  EffortMode(ti::RawJointData *const data, const urdf::Joint &desc)
-      : OperationModeBase("effort", data),
-        eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
+  EffortMode(const urdf::Joint &desc)
+      : OperationModeBase("effort"), eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~EffortMode() {}
 
@@ -31,22 +30,22 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 0.);
 
-    data_->effort_cmd = 0.;
+    eff_cmd_ = 0.;
   }
 
-  virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = Position(joint_, 0);
-    data_->velocity = joint_->GetVelocity(0);
-    data_->effort = joint_->GetForce(0);
+  virtual void read(ti::RawJointData *const data) {
+    data->position = Position(joint_, 0);
+    data->velocity = joint_->GetVelocity(0);
+    data->effort = joint_->GetForce(0);
   }
 
-  virtual void write(const ros::Time &time, const ros::Duration &period) {
-    namespace ba = boost::algorithm;
-    namespace bm = boost::math;
+  virtual void write(const ti::RawJointData &data) {
+    eff_cmd_ = boost::algorithm::clamp(data.effort_cmd, -eff_lim_, eff_lim_);
+  }
 
-    const double eff_cmd(ba::clamp(data_->effort_cmd, -eff_lim_, eff_lim_));
-    if (!bm::isnan(eff_cmd)) {
-      joint_->SetForce(0, eff_cmd);
+  virtual void update(const ros::Time &time, const ros::Duration &period) {
+    if (!boost::math::isnan(eff_cmd_)) {
+      joint_->SetForce(0, eff_cmd_);
     }
   }
 
@@ -54,6 +53,7 @@ public:
 
 private:
   const double eff_lim_;
+  double eff_cmd_;
 };
 } // namespace layered_hardware_gazebo
 

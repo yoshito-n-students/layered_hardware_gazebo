@@ -18,9 +18,8 @@ namespace layered_hardware_gazebo {
 
 class PosVelMode : public OperationModeBase {
 public:
-  PosVelMode(ti::RawJointData *const data, const urdf::Joint &desc)
-      : OperationModeBase("posvel", data),
-        eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
+  PosVelMode(const urdf::Joint &desc)
+      : OperationModeBase("posvel"), eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~PosVelMode() {}
 
@@ -31,29 +30,28 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, eff_lim_);
 
-    data_->position = Position(joint_, 0);
-    data_->position_cmd = data_->position;
-    data_->velocity_cmd = 0.;
+    pos_cmd_ = Position(joint_, 0);
+    vel_lim_ = 0.;
   }
 
-  virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = Position(joint_, 0);
-    data_->velocity = joint_->GetVelocity(0);
-    data_->effort = joint_->GetForce(0);
+  virtual void read(ti::RawJointData *const data) {
+    data->position = Position(joint_, 0);
+    data->velocity = joint_->GetVelocity(0);
+    data->effort = joint_->GetForce(0);
   }
 
-  virtual void write(const ros::Time &time, const ros::Duration &period) {
-    namespace ba = boost::algorithm;
-    namespace bm = boost::math;
+  virtual void write(const ti::RawJointData &data) {
+    pos_cmd_ = data.position_cmd;
+    vel_lim_ = std::abs(data.velocity_cmd);
+  }
 
+  virtual void update(const ros::Time &time, const ros::Duration &period) {
     // velocity required to realize the desired position in the next simulation step
-    const double max_vel((data_->position_cmd - Position(joint_, 0)) / period.toSec());
-    // velocity limit
-    const double vel_lim(std::abs(data_->velocity_cmd));
+    const double vel_max((pos_cmd_ - Position(joint_, 0)) / period.toSec());
     // clamp the required velocity with the limits
-    const double vel_cmd(ba::clamp(max_vel, -vel_lim, vel_lim));
+    const double vel_cmd(boost::algorithm::clamp(vel_max, -vel_lim_, vel_lim_));
 
-    if (!bm::isnan(vel_cmd)) {
+    if (!boost::math::isnan(vel_cmd)) {
       // use SetParam("vel") instead of SetVelocity()
       // to notify the desired velocity to the joint motor
       joint_->SetParam("vel", 0, vel_cmd);
@@ -68,6 +66,7 @@ public:
 
 private:
   const double eff_lim_;
+  double pos_cmd_, vel_lim_;
 };
 } // namespace layered_hardware_gazebo
 

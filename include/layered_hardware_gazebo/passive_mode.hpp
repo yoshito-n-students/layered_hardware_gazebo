@@ -12,7 +12,7 @@ namespace layered_hardware_gazebo {
 
 class PassiveMode : public OperationModeBase {
 public:
-  PassiveMode(ti::RawJointData *const data) : OperationModeBase("passive", data) {}
+  PassiveMode() : OperationModeBase("passive") {}
 
   virtual ~PassiveMode() {}
 
@@ -24,13 +24,15 @@ public:
     joint_->SetParam("fmax", 0, 0.);
   }
 
-  virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = Position(joint_, 0);
-    data_->velocity = joint_->GetVelocity(0);
-    data_->effort = joint_->GetForce(0);
+  virtual void read(ti::RawJointData *const data) {
+    data->position = Position(joint_, 0);
+    data->velocity = joint_->GetVelocity(0);
+    data->effort = joint_->GetForce(0);
   }
 
-  virtual void write(const ros::Time &time, const ros::Duration &period) {
+  virtual void write(const ti::RawJointData &data) {}
+
+  virtual void update(const ros::Time &time, const ros::Duration &period) {
     joint_->SetForce(0, 0.);
   }
 

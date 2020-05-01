@@ -2,6 +2,7 @@
 #define LAYERED_HARDWARE_GAZEBO_GAZEBO_JOINT_LAYER_HPP
 
 #include <list>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -126,7 +127,7 @@ public:
         ti::TransmissionInfo trans_info;
         trans_info.joints_.push_back(joint_info);
         if (!iface_provider->updateJointInterfaces(trans_info, hw, joint_ifaces_,
-                                                   joint_data_map_)) {
+                                                   joint_name_to_data_)) {
           ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to provide the hardware interface of '"
                            << iface_type << "' for the joint '" << joint_info.name_ << "'");
           return false;
@@ -154,12 +155,12 @@ public:
       const std::string &joint_name(joint_param->first);
 
       // find joint data associated with hardware interfaces
-      ti::RawJointDataMap::iterator joint_data_kv(joint_data_map_.find(joint_name));
-      if (joint_data_kv == joint_data_map_.end()) {
+      if (joint_name_to_data_.count(joint_name) == 0) {
         ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to find data for the joint '"
                          << joint_name << "'");
         return false;
       }
+      ti::RawJointData *const joint_data(&joint_name_to_data_[joint_name]);
 
       // find joint model
       const urdf::JointConstSharedPtr joint_desc(model_desc.getJoint(joint_name));
@@ -172,23 +173,23 @@ public:
 
       // init joint drivers with external data
       const GazeboJointDriverPtr joint_driver(new GazeboJointDriver());
-      ti::RawJointData &joint_data(joint_data_kv->second);
       ros::NodeHandle joint_param_nh(param_nh, ros::names::append("joints", joint_name));
-      if (!joint_driver->init(joint_name, &joint_data, joint_param_nh, *joint_desc)) {
+      if (!joint_driver->init(joint_name, joint_param_nh, *joint_desc)) {
         ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to init a driver for the joint '"
                          << joint_name << "'");
         return false;
       }
       ROS_INFO_STREAM("GazeboJointLayer::init(): Initialized the gazebo joint '" << joint_name
                                                                                  << "'");
-      joint_drivers_.push_back(joint_driver);
+      joint_data_to_driver_[joint_data] = joint_driver;
     }
 
     return true;
   }
 
   bool setGazeboModel(const gzp::ModelPtr model) {
-    BOOST_FOREACH (const GazeboJointDriverPtr &driver, joint_drivers_) {
+    BOOST_FOREACH (const JointDataToDriver::value_type &kv, joint_data_to_driver_) {
+      const GazeboJointDriverPtr &driver(kv.second);
       if (!driver->setGazeboModel(model)) {
         return false;
       }
@@ -199,7 +200,8 @@ public:
   virtual bool prepareSwitch(const std::list< hi::ControllerInfo > &start_list,
                              const std::list< hi::ControllerInfo > &stop_list) {
     // ask to all joint drivers if controller switching is possible
-    BOOST_FOREACH (const GazeboJointDriverPtr &driver, joint_drivers_) {
+    BOOST_FOREACH (const JointDataToDriver::value_type &kv, joint_data_to_driver_) {
+      const GazeboJointDriverPtr &driver(kv.second);
       if (!driver->prepareSwitch(start_list, stop_list)) {
         return false;
       }
@@ -210,30 +212,37 @@ public:
   virtual void doSwitch(const std::list< hi::ControllerInfo > &start_list,
                         const std::list< hi::ControllerInfo > &stop_list) {
     // notify controller switching to all joint drivers
-    BOOST_FOREACH (const GazeboJointDriverPtr &driver, joint_drivers_) {
+    BOOST_FOREACH (const JointDataToDriver::value_type &kv, joint_data_to_driver_) {
+      const GazeboJointDriverPtr &driver(kv.second);
       driver->doSwitch(start_list, stop_list);
     }
   }
 
   virtual void read(const ros::Time &time, const ros::Duration &period) {
     // read from all joint drivers
-    BOOST_FOREACH (const GazeboJointDriverPtr &driver, joint_drivers_) {
-      driver->read(time, period);
+    BOOST_FOREACH (const JointDataToDriver::value_type &kv, joint_data_to_driver_) {
+      ti::RawJointData *const data(kv.first);
+      const GazeboJointDriverPtr &driver(kv.second);
+      driver->read(data);
     }
   }
 
   virtual void write(const ros::Time &time, const ros::Duration &period) {
     // write to all joint drivers
-    BOOST_FOREACH (const GazeboJointDriverPtr &driver, joint_drivers_) {
-      driver->write(time, period);
+    BOOST_FOREACH (const JointDataToDriver::value_type &kv, joint_data_to_driver_) {
+      ti::RawJointData *const data(kv.first);
+      const GazeboJointDriverPtr &driver(kv.second);
+      driver->write(*data);
     }
   }
 
 private:
+  typedef std::map< ti::RawJointData *, GazeboJointDriverPtr > JointDataToDriver;
+
   pluginlib::ClassLoader< ti::RequisiteProvider > joint_iface_provider_loader_;
   ti::JointInterfaces joint_ifaces_;
-  ti::RawJointDataMap joint_data_map_;
-  std::vector< GazeboJointDriverPtr > joint_drivers_;
+  ti::RawJointDataMap joint_name_to_data_;
+  JointDataToDriver joint_data_to_driver_;
 };
 
 typedef boost::shared_ptr< GazeboJointLayer > GazeboJointLayerPtr;

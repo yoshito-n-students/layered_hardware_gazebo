@@ -17,8 +17,8 @@ namespace layered_hardware_gazebo {
 
 class PositionMode : public OperationModeBase {
 public:
-  PositionMode(ti::RawJointData *const data, const urdf::Joint &desc)
-      : OperationModeBase("position", data),
+  PositionMode(const urdf::Joint &desc)
+      : OperationModeBase("position"),
         eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~PositionMode() {}
@@ -30,21 +30,20 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, eff_lim_);
 
-    data_->position = Position(joint_, 0);
-    data_->position_cmd = data_->position;
+    pos_cmd_ = Position(joint_, 0);
   }
 
-  virtual void read(const ros::Time &time, const ros::Duration &period) {
-    data_->position = Position(joint_, 0);
-    data_->velocity = joint_->GetVelocity(0);
-    data_->effort = joint_->GetForce(0);
+  virtual void read(ti::RawJointData *const data) {
+    data->position = Position(joint_, 0);
+    data->velocity = joint_->GetVelocity(0);
+    data->effort = joint_->GetForce(0);
   }
 
-  virtual void write(const ros::Time &time, const ros::Duration &period) {
-    namespace bm = boost::math;
+  virtual void write(const ti::RawJointData &data) { pos_cmd_ = data.position_cmd; }
 
-    const double vel_cmd((data_->position_cmd - Position(joint_,0)) / period.toSec());
-    if (!bm::isnan(vel_cmd)) {
+  virtual void update(const ros::Time &time, const ros::Duration &period) {
+    const double vel_cmd((pos_cmd_ - Position(joint_, 0)) / period.toSec());
+    if (!boost::math::isnan(vel_cmd)) {
       // use SetParam("vel") instead of SetVelocity()
       // to notify the desired velocity to the joint motor
       joint_->SetParam("vel", 0, vel_cmd);
@@ -59,6 +58,7 @@ public:
 
 private:
   const double eff_lim_;
+  double pos_cmd_;
 };
 } // namespace layered_hardware_gazebo
 

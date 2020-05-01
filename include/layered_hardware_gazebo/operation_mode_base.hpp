@@ -17,8 +17,7 @@ namespace layered_hardware_gazebo {
 
 class OperationModeBase {
 public:
-  OperationModeBase(const std::string &name, ti::RawJointData *const data)
-      : name_(name), data_(data) {}
+  OperationModeBase(const std::string &name) : name_(name) {}
 
   virtual ~OperationModeBase() {}
 
@@ -30,9 +29,11 @@ public:
 
   virtual void starting() = 0;
 
-  virtual void read(const ros::Time &time, const ros::Duration &period) = 0;
+  virtual void read(ti::RawJointData *const data) = 0;
 
-  virtual void write(const ros::Time &time, const ros::Duration &period) = 0;
+  virtual void write(const ti::RawJointData &data) = 0;
+
+  virtual void update(const ros::Time &time, const ros::Duration &period) = 0;
 
   virtual void stopping() = 0;
 
@@ -47,7 +48,6 @@ protected:
 
 protected:
   const std::string name_;
-  ti::RawJointData *data_;
   gzp::JointPtr joint_;
 };
 
