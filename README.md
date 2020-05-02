@@ -10,6 +10,9 @@ See [layered_hardware](https://github.com/yoshito-n-students/layered_hardware) t
 * a layered_hardware node running on a robot in the Gazebo simulator (as a Gazebo's model plugin)
 
 ### <u>Parameters (should be defined under <robot\>/layered_hardware_gazebo)</u>
+___control_frequency___ (double, default: 10.0)
+* frequency of control step (reading from the layers, updating the controllers, and writing to the layers) in Hz with respect to the simulation time
+
 ___robot_description___ or ___<node_ns\>/robot_description___ (string, default: "")
 * robot description in URDF
 * if both given, ___robot_description___ will be used

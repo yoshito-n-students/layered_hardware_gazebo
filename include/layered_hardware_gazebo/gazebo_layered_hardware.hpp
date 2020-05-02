@@ -54,29 +54,43 @@ public:
     // bind ros-controller manager to layers
     cm_.reset(new controller_manager::ControllerManager(hw_.get(), nh));
 
-    // init timestamp
-    prev_time_ = ros::Time::now();
-
-    // schedule controllers' & layers' update on every simulation step
+    // schedule controllers' & layers' update
+    const double control_frequency(pnh.param("control_frequency", 10.));
+    update_period_ = ros::Rate(control_frequency).expectedCycleTime();
+    const common::Time time(_model->GetWorld()->SimTime());
+    last_update_time_ = ros::Time(time.sec, time.nsec) - update_period_;
+    next_update_time_ = ros::Time(time.sec, time.nsec);
     update_connection_ = event::Events::ConnectWorldUpdateBegin(
-        boost::bind(&GazeboLayeredHardware::OnWorldUpdateBegin, this));
+        boost::bind(&GazeboLayeredHardware::update, this, _1));
+
+    ROS_INFO_STREAM("Started updating LayeredHardware for the model '"
+                    << model_name << "' at " << control_frequency << " Hz");
   }
 
 private:
-  void OnWorldUpdateBegin() {
-    // TODO: set control frequency from ros-param
-    const ros::Time time(ros::Time::now());
-    const ros::Duration period(time - prev_time_);
+  void update(const common::UpdateInfo &info) {
+    // check the scheduled time has come
+    const ros::Time time(info.simTime.sec, info.simTime.nsec);
+    if (time < next_update_time_) {
+      return;
+    }
+
+    // update the hardware and controllers
+    const ros::Duration period(time - last_update_time_);
     hw_->read(time, period);
     cm_->update(time, period);
     hw_->write(time, period);
-    prev_time_ = time;
+    last_update_time_ = time;
+
+    // schedule the next update
+    next_update_time_ += update_period_;
   }
 
 private:
   boost::scoped_ptr< lh::LayeredHardware > hw_;
   boost::scoped_ptr< controller_manager::ControllerManager > cm_;
-  ros::Time prev_time_;
+  ros::Time last_update_time_, next_update_time_;
+  ros::Duration update_period_;
   event::ConnectionPtr update_connection_;
 };
 } // namespace gazebo
