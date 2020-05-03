@@ -30,7 +30,7 @@ public:
     // activate ros-control layers
     hw_.reset(new lh::LayeredHardware());
     if (!hw_->init(pnh)) {
-      ROS_ERROR("Failed to init LayeredHardware");
+      ROS_ERROR("GazeboLayeredHardware::Load(): Failed to init LayeredHardware");
       return;
     }
 
@@ -45,8 +45,8 @@ public:
 
       // set the model to a layer found
       if (!layer->setGazeboModel(_model)) {
-        ROS_ERROR_STREAM("Failed to set the Gazebo model '" << model_name << "' to the layer [" << i
-                                                            << "]");
+        ROS_ERROR_STREAM("GazeboLayeredHardware::Load(): Failed to set the Gazebo model '"
+                         << model_name << "' to the layer [" << i << "]");
         return;
       }
     }
@@ -63,8 +63,9 @@ public:
     update_connection_ = event::Events::ConnectWorldUpdateBegin(
         boost::bind(&GazeboLayeredHardware::update, this, _1));
 
-    ROS_INFO_STREAM("Started updating LayeredHardware for the model '"
-                    << model_name << "' at " << control_frequency << " Hz");
+    ROS_INFO_STREAM(
+        "GazeboLayeredHardware::Load(): Started updating LayeredHardware for the model '"
+        << model_name << "' at " << control_frequency << " Hz");
   }
 
 private:
