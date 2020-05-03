@@ -12,6 +12,8 @@
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 #include <urdf/model.h>
 
+#include <gazebo/physics/physics.hh>
+
 #include <boost/algorithm/clamp.hpp>
 #include <boost/math/special_functions/fpclassify.hpp> // for isnan()
 
@@ -19,8 +21,8 @@ namespace layered_hardware_gazebo {
 
 class VelocityPIDMode : public OperationModeBase {
 public:
-  VelocityPIDMode(const urdf::Joint &desc)
-      : OperationModeBase("velocity_pid"),
+  VelocityPIDMode(const urdf::Joint &desc, const gzp::JointPtr joint)
+      : OperationModeBase("velocity_pid", joint),
         eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~VelocityPIDMode() {}

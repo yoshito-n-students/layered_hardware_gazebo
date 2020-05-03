@@ -17,13 +17,12 @@ namespace layered_hardware_gazebo {
 
 class OperationModeBase {
 public:
-  OperationModeBase(const std::string &name) : name_(name) {}
+  OperationModeBase(const std::string &name, const gzp::JointPtr joint)
+      : name_(name), joint_(joint) {}
 
   virtual ~OperationModeBase() {}
 
   std::string getName() const { return name_; }
-
-  void setGazeboJoint(const gzp::JointPtr joint) { joint_ = joint; }
 
   virtual bool init(const ros::NodeHandle &param_nh) = 0;
 
@@ -48,7 +47,7 @@ protected:
 
 protected:
   const std::string name_;
-  gzp::JointPtr joint_;
+  const gzp::JointPtr joint_;
 };
 
 typedef boost::shared_ptr< OperationModeBase > OperationModePtr;

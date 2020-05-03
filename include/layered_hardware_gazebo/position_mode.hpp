@@ -11,14 +11,16 @@
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 #include <urdf/model.h>
 
+#include <gazebo/physics/physics.hh>
+
 #include <boost/math/special_functions/fpclassify.hpp> // for isnan()
 
 namespace layered_hardware_gazebo {
 
 class PositionMode : public OperationModeBase {
 public:
-  PositionMode(const urdf::Joint &desc)
-      : OperationModeBase("position"),
+  PositionMode(const urdf::Joint &desc, const gzp::JointPtr joint)
+      : OperationModeBase("position", joint),
         eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~PositionMode() {}

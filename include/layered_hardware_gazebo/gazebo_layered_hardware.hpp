@@ -5,9 +5,8 @@
 #include <gazebo/physics/physics.hh>
 
 #include <controller_manager/controller_manager.h>
-#include <layered_hardware/layered_hardware.hpp>
 #include <layered_hardware_gazebo/common_namespaces.hpp>
-#include <layered_hardware_gazebo/gazebo_joint_layer.hpp>
+#include <layered_hardware_gazebo/layered_hardware_gazebo.hpp>
 #include <ros/console.h>
 #include <ros/duration.h>
 #include <ros/names.h>
@@ -15,40 +14,22 @@
 #include <ros/time.h>
 
 #include <boost/bind/bind.hpp>
-#include <boost/pointer_cast.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace gazebo {
 
 class GazeboLayeredHardware : public ModelPlugin {
 public:
-  void Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*/) {
+  void Load(physics::ModelPtr model, sdf::ElementPtr /*sdf*/) {
     // ROS namespaces
-    const std::string model_name(_model->GetName());
+    const std::string model_name(model->GetName());
     ros::NodeHandle nh(model_name), pnh(ros::names::append(model_name, "layered_hardware_gazebo"));
 
     // activate ros-control layers
-    hw_.reset(new lh::LayeredHardware());
-    if (!hw_->init(pnh)) {
+    hw_.reset(new lhg::LayeredHardwareGazebo());
+    if (!hw_->init(pnh, model)) {
       ROS_ERROR("GazeboLayeredHardware::Load(): Failed to init LayeredHardware");
       return;
-    }
-
-    // notify the gazebo model to gazebo-related layers
-    for (std::size_t i = 0; i < hw_->size(); ++i) {
-      // skip non-gazebo layers
-      const lhg::GazeboJointLayerPtr layer(
-          boost::dynamic_pointer_cast< lhg::GazeboJointLayer >(hw_->layer(i)));
-      if (!layer) {
-        continue;
-      }
-
-      // set the model to a layer found
-      if (!layer->setGazeboModel(_model)) {
-        ROS_ERROR_STREAM("GazeboLayeredHardware::Load(): Failed to set the Gazebo model '"
-                         << model_name << "' to the layer [" << i << "]");
-        return;
-      }
     }
 
     // bind ros-controller manager to layers
@@ -57,7 +38,7 @@ public:
     // schedule controllers' & layers' update
     const double control_frequency(pnh.param("control_frequency", 10.));
     update_period_ = ros::Rate(control_frequency).expectedCycleTime();
-    const common::Time time(_model->GetWorld()->SimTime());
+    const common::Time time(model->GetWorld()->SimTime());
     last_update_time_ = ros::Time(time.sec, time.nsec) - update_period_;
     next_update_time_ = ros::Time(time.sec, time.nsec);
     update_connection_ = event::Events::ConnectWorldUpdateBegin(
@@ -88,7 +69,7 @@ private:
   }
 
 private:
-  boost::scoped_ptr< lh::LayeredHardware > hw_;
+  boost::scoped_ptr< lhg::LayeredHardwareGazebo > hw_;
   boost::scoped_ptr< controller_manager::ControllerManager > cm_;
   ros::Time last_update_time_, next_update_time_;
   ros::Duration update_period_;

@@ -11,6 +11,8 @@
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 #include <urdf/model.h>
 
+#include <gazebo/physics/physics.hh>
+
 #include <boost/algorithm/clamp.hpp>
 #include <boost/math/special_functions/fpclassify.hpp> // for isnan()
 
@@ -18,8 +20,9 @@ namespace layered_hardware_gazebo {
 
 class EffortMode : public OperationModeBase {
 public:
-  EffortMode(const urdf::Joint &desc)
-      : OperationModeBase("effort"), eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
+  EffortMode(const urdf::Joint &desc, const gzp::JointPtr joint)
+      : OperationModeBase("effort", joint),
+        eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~EffortMode() {}
 

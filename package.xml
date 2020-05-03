@@ -81,6 +81,6 @@
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-    <layered_hardware plugin="${prefix}/plugins.xml" />
+    <layered_hardware_gazebo plugin="${prefix}/plugins.xml" />
   </export>
 </package>

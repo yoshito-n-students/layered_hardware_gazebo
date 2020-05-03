@@ -11,6 +11,8 @@
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 #include <urdf/model.h>
 
+#include <gazebo/physics/physics.hh>
+
 #include <boost/algorithm/clamp.hpp>
 #include <boost/math/special_functions/fpclassify.hpp> // for isnan()
 
@@ -18,8 +20,9 @@ namespace layered_hardware_gazebo {
 
 class PosVelMode : public OperationModeBase {
 public:
-  PosVelMode(const urdf::Joint &desc)
-      : OperationModeBase("posvel"), eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
+  PosVelMode(const urdf::Joint &desc, const gzp::JointPtr joint)
+      : OperationModeBase("posvel", joint),
+        eff_lim_(desc.limits ? std::abs(desc.limits->effort) : 1e10) {}
 
   virtual ~PosVelMode() {}
 

@@ -9,9 +9,9 @@
 
 #include <hardware_interface/controller_info.h>
 #include <hardware_interface/robot_hw.h>
-#include <layered_hardware/layer_base.hpp>
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/gazebo_joint_driver.hpp>
+#include <layered_hardware_gazebo/gazebo_layer_base.hpp>
 #include <pluginlib/class_loader.hpp>
 #include <ros/console.h>
 #include <ros/duration.h>
@@ -30,7 +30,7 @@
 
 namespace layered_hardware_gazebo {
 
-class GazeboJointLayer : public lh::LayerBase {
+class GazeboJointLayer : public GazeboLayerBase {
 public:
   GazeboJointLayer()
       : joint_iface_provider_loader_("transmission_interface",
@@ -39,7 +39,7 @@ public:
   virtual ~GazeboJointLayer() {}
 
   virtual bool init(hi::RobotHW *const hw, const ros::NodeHandle &param_nh,
-                    const std::string &urdf_str) {
+                    const std::string &urdf_str, const gzp::ModelPtr model) {
     /////////////////////////////////////////////////////////////////
     // 1. get list of joints to be handled by this layer from params
 
@@ -171,10 +171,18 @@ public:
         return false;
       }
 
+      // find a joint in the gazebo model
+      const gzp::JointPtr joint(model->GetJoint(joint_name));
+      if (!joint) {
+        ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to find the joint '"
+                         << joint_name << "' in the model '" << model->GetName() << "'");
+        return false;
+      }
+
       // init joint drivers with external data
       const GazeboJointDriverPtr joint_driver(new GazeboJointDriver());
       ros::NodeHandle joint_param_nh(param_nh, ros::names::append("joints", joint_name));
-      if (!joint_driver->init(joint_name, joint_param_nh, *joint_desc)) {
+      if (!joint_driver->init(joint_name, joint_param_nh, *joint_desc, joint)) {
         ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to init a driver for the joint '"
                          << joint_name << "'");
         return false;
@@ -184,16 +192,6 @@ public:
       joint_data_to_driver_[joint_data] = joint_driver;
     }
 
-    return true;
-  }
-
-  bool setGazeboModel(const gzp::ModelPtr model) {
-    BOOST_FOREACH (const JointDataToDriver::value_type &kv, joint_data_to_driver_) {
-      const GazeboJointDriverPtr &driver(kv.second);
-      if (!driver->setGazeboModel(model)) {
-        return false;
-      }
-    }
     return true;
   }
 

@@ -36,7 +36,8 @@ public:
 
   virtual ~GazeboJointDriver() {}
 
-  bool init(const std::string &name, const ros::NodeHandle &param_nh, const urdf::Joint &desc) {
+  bool init(const std::string &name, const ros::NodeHandle &param_nh, const urdf::Joint &desc,
+            const gzp::JointPtr joint) {
     name_ = name;
 
     typedef std::map< std::string, std::string > ControllerToModeName;
@@ -49,7 +50,7 @@ public:
     BOOST_FOREACH (const ControllerToModeName::value_type &kv, controller_to_mode_name) {
       const std::string &controller_name(kv.first);
       const std::string &mode_name(kv.second);
-      const OperationModePtr mode(makeOperationMode(mode_name, param_nh, desc));
+      const OperationModePtr mode(makeOperationMode(mode_name, param_nh, desc, joint));
       if (!mode) {
         ROS_ERROR_STREAM("GazeboJointDriver::init(): Failed to make operation mode '"
                          << mode_name << "' for the joint '" << name << "'");
@@ -59,6 +60,8 @@ public:
     }
 
     // update joint operation mode (embedded controller) on every simulation step
+    const gzc::Time time(joint->GetWorld()->SimTime());
+    last_update_time_ = ros::Time(time.sec, time.nsec);
     update_connection_ =
         gze::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboJointDriver::update, this, _1));
     if (!update_connection_) {
@@ -67,25 +70,6 @@ public:
                        << name << "'");
       return false;
     }
-
-    return true;
-  }
-
-  bool setGazeboModel(const gzp::ModelPtr model) {
-    const gzp::JointPtr joint(model->GetJoint(name_));
-    if (!joint) {
-      ROS_ERROR_STREAM("GazeboJointDriver::setGazeboModel(): Failed to find the joint '"
-                       << name_ << "' in the model '" << model->GetName() << "'");
-      return false;
-    }
-
-    BOOST_FOREACH (ControllerNameToMode::value_type &kv, controller_name_to_mode) {
-      const OperationModePtr &mode(kv.second);
-      mode->setGazeboJoint(joint);
-    }
-
-    const gzc::Time time(model->GetWorld()->SimTime());
-    last_update_time_ = ros::Time(time.sec, time.nsec);
 
     return true;
   }
@@ -178,34 +162,33 @@ public:
   }
 
   void update(const gzc::UpdateInfo &info) {
+    const ros::Time time(info.simTime.sec, info.simTime.nsec);
     if (present_mode_) {
-      const ros::Time time(info.simTime.sec, info.simTime.nsec);
-      const ros::Duration period(time - last_update_time_);
-      present_mode_->update(time, period);
-      last_update_time_ = time;
+      present_mode_->update(time, time - last_update_time_);
     }
+    last_update_time_ = time;
   }
 
 private:
   OperationModePtr makeOperationMode(const std::string &mode_str, const ros::NodeHandle &param_nh,
-                                     const urdf::Joint &desc) {
+                                     const urdf::Joint &desc, const gzp::JointPtr &joint) {
     OperationModePtr mode;
     if (mode_str == "effort") {
-      mode.reset(new EffortMode(desc));
+      mode.reset(new EffortMode(desc, joint));
     } else if (mode_str == "passive") {
-      mode.reset(new PassiveMode());
+      mode.reset(new PassiveMode(joint));
     } else if (mode_str == "position") {
-      mode.reset(new PositionMode(desc));
+      mode.reset(new PositionMode(desc, joint));
     } else if (mode_str == "position_pid") {
-      mode.reset(new PositionPIDMode(desc));
+      mode.reset(new PositionPIDMode(desc, joint));
     } else if (mode_str == "posvel") {
-      mode.reset(new PosVelMode(desc));
+      mode.reset(new PosVelMode(desc, joint));
     } else if (mode_str == "posvel_pid") {
-      mode.reset(new PosVelPIDMode(desc));
+      mode.reset(new PosVelPIDMode(desc, joint));
     } else if (mode_str == "velocity") {
-      mode.reset(new VelocityMode(desc));
+      mode.reset(new VelocityMode(desc, joint));
     } else if (mode_str == "velocity_pid") {
-      mode.reset(new VelocityPIDMode(desc));
+      mode.reset(new VelocityPIDMode(desc, joint));
     }
     if (!mode) {
       ROS_ERROR_STREAM("GazeboJointDriver::makeOperationMode(): Unknown operation mode name '"

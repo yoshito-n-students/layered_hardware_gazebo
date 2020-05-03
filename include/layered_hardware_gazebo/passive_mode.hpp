@@ -8,11 +8,13 @@
 #include <ros/time.h>
 #include <transmission_interface/transmission_interface_loader.h> //for RawJointData
 
+#include <gazebo/physics/physics.hh>
+
 namespace layered_hardware_gazebo {
 
 class PassiveMode : public OperationModeBase {
 public:
-  PassiveMode() : OperationModeBase("passive") {}
+  PassiveMode(const gzp::JointPtr joint) : OperationModeBase("passive", joint) {}
 
   virtual ~PassiveMode() {}
 

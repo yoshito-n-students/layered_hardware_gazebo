@@ -2,7 +2,7 @@
 
   <class name="layered_hardware_gazebo/GazeboJointLayer"
          type="layered_hardware_gazebo::GazeboJointLayer"
-         base_class_type="layered_hardware::LayerBase">
+         base_class_type="layered_hardware_gazebo::GazeboLayerBase">
     <description>
       Hardware layer that handles joints in Gazebo simulator
     </description>
