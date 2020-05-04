@@ -22,7 +22,11 @@ public:
       : lh::LayeredHardware(), gazebo_layer_loader_("layered_hardware_gazebo",
                                                     "layered_hardware_gazebo::GazeboLayerBase") {}
 
-  virtual ~LayeredHardwareGazebo() {}
+  virtual ~LayeredHardwareGazebo() {
+    // before destructing layer loader,
+    // deallocate layers which were created by plugins or loader cannot unload plugins
+    layers_.clear();
+  }
 
   bool init(const ros::NodeHandle &param_nh, const gzp::ModelPtr model) {
     // get URDF description from param
