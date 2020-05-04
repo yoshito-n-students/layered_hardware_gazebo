@@ -2,6 +2,10 @@
 Changelog for package layered_hardware_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.5 (next version)
+--------------------
+* Supress a warning on unloading layer plugins
+
 0.0.4 (2020-05-05)
 ------------------
 * Support custom control frequency, independent from the simulation step
