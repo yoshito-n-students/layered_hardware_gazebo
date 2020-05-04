@@ -2,10 +2,11 @@
 Changelog for package layered_hardware_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.0.4 (next version)
---------------------
+0.0.4 (2020-05-05)
+------------------
 * Support custom control frequency, independent from the simulation step
 * Support user-defined gazebo layer plugins which base type is GazeboLayerBase
+* Fix a rare issue where GazeboLayeredHardware plugin fails to load
 
 0.0.3 (2020-04-30)
 ------------------
