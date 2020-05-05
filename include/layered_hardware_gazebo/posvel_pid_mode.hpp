@@ -36,14 +36,14 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 0.);
 
-    pos_cmd_ = Position(joint_, 0);
+    pos_cmd_ = Position(*joint_, 0);
     vel_lim_ = 0.;
 
     pid_.reset();
   }
 
   virtual void read(ti::RawJointData *const data) {
-    data->position = Position(joint_, 0);
+    data->position = Position(*joint_, 0);
     data->velocity = joint_->GetVelocity(0);
     data->effort = joint_->GetForce(0);
   }
@@ -55,7 +55,7 @@ public:
 
   virtual void update(const ros::Time &time, const ros::Duration &period) {
     // velocity required to realize the desired position in the next simulation step
-    const double vel_max((pos_cmd_ - Position(joint_, 0)) / period.toSec());
+    const double vel_max((pos_cmd_ - Position(*joint_, 0)) / period.toSec());
     // clamp the required velocity with the limits
     const double vel_cmd(boost::algorithm::clamp(vel_max, -vel_lim_, vel_lim_));
     const double vel_err(vel_cmd - joint_->GetVelocity(0));

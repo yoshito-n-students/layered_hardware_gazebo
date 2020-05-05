@@ -62,7 +62,7 @@ public:
   }
 
   virtual void read(ti::RawJointData *const data) {
-    data->position = Position(joint_, 0);
+    data->position = Position(*joint_, 0);
     data->velocity = joint_->GetVelocity(0);
     data->effort = joint_->GetForce(0);
   }
@@ -70,8 +70,8 @@ public:
   virtual void write(const ti::RawJointData &data) {}
 
   virtual void update(const ros::Time &time, const ros::Duration &period) {
-    const double pos_cmd(multiplier_ * Position(mimic_joint_, 0) + offset_);
-    const double pos_err(pos_cmd - Position(joint_, 0));
+    const double pos_cmd(multiplier_ * Position(*mimic_joint_, 0) + offset_);
+    const double pos_err(pos_cmd - Position(*joint_, 0));
     const double eff_cmd(
         boost::algorithm::clamp(pid_.computeCommand(pos_err, period), -eff_lim_, eff_lim_));
     if (!boost::math::isnan(eff_cmd)) {

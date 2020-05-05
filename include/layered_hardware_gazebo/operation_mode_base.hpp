@@ -37,11 +37,11 @@ public:
   virtual void stopping() = 0;
 
 protected:
-  static double Position(const gzp::JointPtr joint, const unsigned int index) {
+  static double Position(const gzp::Joint &joint, const unsigned int index) {
 #if GAZEBO_MAJOR_VERSION >= 8
-    return joint->Position(index);
+    return joint.Position(index);
 #else
-    return *(joint->GetAngle(index));
+    return *(joint.GetAngle(index));
 #endif
   }
 

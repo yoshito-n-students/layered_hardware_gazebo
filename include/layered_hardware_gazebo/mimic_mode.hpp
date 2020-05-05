@@ -53,7 +53,7 @@ public:
   }
 
   virtual void read(ti::RawJointData *const data) {
-    data->position = Position(joint_, 0);
+    data->position = Position(*joint_, 0);
     data->velocity = joint_->GetVelocity(0);
     data->effort = joint_->GetForce(0);
   }
@@ -61,8 +61,8 @@ public:
   virtual void write(const ti::RawJointData &data) {}
 
   virtual void update(const ros::Time &time, const ros::Duration &period) {
-    const double pos_cmd(multiplier_ * Position(mimic_joint_, 0) + offset_);
-    const double vel_cmd((pos_cmd - Position(joint_, 0)) / period.toSec());
+    const double pos_cmd(multiplier_ * Position(*mimic_joint_, 0) + offset_);
+    const double vel_cmd((pos_cmd - Position(*joint_, 0)) / period.toSec());
     if (!boost::math::isnan(vel_cmd)) {
       // use SetParam("vel") instead of SetVelocity()
       // to notify the desired velocity to the joint motor
