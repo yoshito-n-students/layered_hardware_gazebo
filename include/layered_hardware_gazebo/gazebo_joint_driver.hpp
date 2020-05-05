@@ -8,6 +8,8 @@
 #include <hardware_interface/controller_info.h>
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/effort_mode.hpp>
+#include <layered_hardware_gazebo/mimic_mode.hpp>
+#include <layered_hardware_gazebo/mimic_pid_mode.hpp>
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
 #include <layered_hardware_gazebo/passive_mode.hpp>
 #include <layered_hardware_gazebo/position_mode.hpp>
@@ -175,6 +177,10 @@ private:
     OperationModePtr mode;
     if (mode_str == "effort") {
       mode.reset(new EffortMode(desc, joint));
+    } else if (mode_str == "mimic") {
+      mode.reset(new MimicMode(desc, joint));
+    } else if (mode_str == "mimic_pid") {
+      mode.reset(new MimicPIDMode(desc, joint));
     } else if (mode_str == "passive") {
       mode.reset(new PassiveMode(joint));
     } else if (mode_str == "position") {
