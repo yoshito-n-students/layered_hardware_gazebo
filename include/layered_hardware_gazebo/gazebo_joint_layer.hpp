@@ -153,13 +153,6 @@ public:
     for (XmlRpc::XmlRpcValue::iterator joint_param = joints_param.begin();
          joint_param != joints_param.end(); ++joint_param) {
       const std::string &joint_name(joint_param->first);
-
-      // find joint data associated with hardware interfaces
-      if (joint_name_to_data_.count(joint_name) == 0) {
-        ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to find data for the joint '"
-                         << joint_name << "'");
-        return false;
-      }
       ti::RawJointData *const joint_data(&joint_name_to_data_[joint_name]);
 
       // find joint description
