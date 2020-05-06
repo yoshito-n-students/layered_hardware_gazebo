@@ -2,10 +2,10 @@
 Changelog for package layered_hardware_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.0.5 (next version)
---------------------
+0.0.5 (2020-05-06)
+------------------
 * Add mimic/mimic-PID operation modes
-* Supress a warning on unloading layer plugins
+* Supress a warning console message on unloading layer plugins
 * Initialize joint states on starting a GazeboJointLayer
 
 0.0.4 (2020-05-05)
