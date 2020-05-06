@@ -26,7 +26,7 @@ public:
 
   virtual bool init(const ros::NodeHandle &param_nh) = 0;
 
-  virtual void starting() = 0;
+  virtual void starting(ti::RawJointData *const data) = 0;
 
   virtual void read(ti::RawJointData *const data) = 0;
 

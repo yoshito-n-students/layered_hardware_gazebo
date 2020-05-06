@@ -182,7 +182,7 @@ public:
       // init joint drivers with external data
       const GazeboJointDriverPtr joint_driver(new GazeboJointDriver());
       ros::NodeHandle joint_param_nh(param_nh, ros::names::append("joints", joint_name));
-      if (!joint_driver->init(joint_name, joint_data, joint_param_nh, *joint_desc, joint)) {
+      if (!joint_driver->init(joint_name, joint_param_nh, *joint_desc, joint)) {
         ROS_ERROR_STREAM("GazeboJointLayer::init(): Failed to init a driver for the joint '"
                          << joint_name << "'");
         return false;
@@ -211,8 +211,9 @@ public:
                         const std::list< hi::ControllerInfo > &stop_list) {
     // notify controller switching to all joint drivers
     BOOST_FOREACH (const JointDataToDriver::value_type &kv, joint_data_to_driver_) {
+      ti::RawJointData *const data(kv.first);
       const GazeboJointDriverPtr &driver(kv.second);
-      driver->doSwitch(start_list, stop_list);
+      driver->doSwitch(start_list, stop_list, data);
     }
   }
 

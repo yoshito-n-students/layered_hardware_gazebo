@@ -28,12 +28,15 @@ public:
 
   virtual bool init(const ros::NodeHandle &param_nh) { return true; }
 
-  virtual void starting() {
+  virtual void starting(ti::RawJointData *const data) {
     // enable ODE's joint motor function for effort-based position control
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, eff_lim_);
 
-    pos_cmd_ = Position(*joint_, 0);
+    const double pos(Position(*joint_, 0));
+    // the latest position may be useful in the starting procedure of a pos-based controller
+    data->position = pos;
+    pos_cmd_ = pos;
     vel_lim_ = 0.;
   }
 

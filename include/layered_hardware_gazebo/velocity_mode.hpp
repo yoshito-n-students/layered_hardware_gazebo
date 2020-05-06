@@ -27,7 +27,7 @@ public:
 
   virtual bool init(const ros::NodeHandle &param_nh) { return true; }
 
-  virtual void starting() {
+  virtual void starting(ti::RawJointData *const data) {
     // enable ODE's joint motor function for effort-based velocity control
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, eff_lim_);

@@ -38,18 +38,9 @@ public:
 
   virtual ~GazeboJointDriver() {}
 
-  bool init(const std::string &name, ti::RawJointData *const data, const ros::NodeHandle &param_nh,
-            const urdf::Joint &desc, const gzp::JointPtr joint) {
+  bool init(const std::string &name, const ros::NodeHandle &param_nh, const urdf::Joint &desc,
+            const gzp::JointPtr joint) {
     name_ = name;
-
-    // init joint data
-#if GAZEBO_MAJOR_VERSION >= 8
-    data->position = joint->Position(0);
-#else
-    data->position = *(joint->GetAngle(0));
-#endif
-    data->velocity = joint->GetVelocity(0);
-    data->effort = joint->GetForce(0);
 
     // make operation modes based on param
     typedef std::map< std::string, std::string > ControllerToModeName;
@@ -127,7 +118,8 @@ public:
   }
 
   void doSwitch(const std::list< hi::ControllerInfo > &starting_controller_list,
-                const std::list< hi::ControllerInfo > &stopping_controller_list) {
+                const std::list< hi::ControllerInfo > &stopping_controller_list,
+                ti::RawJointData *const data) {
     // stop joint's operation mode according to stopping controller list
     if (present_mode_) {
       BOOST_FOREACH (const hi::ControllerInfo &stopping_controller, stopping_controller_list) {
@@ -154,7 +146,7 @@ public:
                           << mode_to_start->second->getName() << "' for the joint '" << name_
                           << "'");
           present_mode_ = mode_to_start->second;
-          present_mode_->starting();
+          present_mode_->starting(data);
           break;
         }
       }

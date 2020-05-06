@@ -31,12 +31,15 @@ public:
     return pid_.initParam(param_nh.resolveName("position_pid"));
   }
 
-  virtual void starting() {
+  virtual void starting(ti::RawJointData *const data) {
     // disable ODE's joint motor function or effort control does not work
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 0.);
 
-    pos_cmd_ = Position(*joint_, 0);
+    const double pos(Position(*joint_, 0));
+    // the latest position may be useful in the starting procedure of a pos-based controller
+    data->position = pos;
+    pos_cmd_ = pos;
 
     pid_.reset();
   }

@@ -46,7 +46,7 @@ public:
     return true;
   }
 
-  virtual void starting() {
+  virtual void starting(ti::RawJointData *const data) {
     // enable ODE's joint motor function for effort-based position control
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, eff_lim_);
