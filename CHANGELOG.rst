@@ -2,6 +2,10 @@
 Changelog for package layered_hardware_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.6 (2020-05-06)
+------------------
+* Fix to compile on ROS kinetic
+
 0.0.5 (2020-05-06)
 ------------------
 * Add mimic/mimic-PID operation modes
