@@ -7,6 +7,7 @@
 #include <controller_manager/controller_manager.h>
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/layered_hardware_gazebo.hpp>
+#include <layered_hardware_gazebo/wrap.hpp>
 #include <ros/console.h>
 #include <ros/duration.h>
 #include <ros/names.h>
@@ -38,7 +39,7 @@ public:
     // schedule controllers' & layers' update
     const double control_frequency(pnh.param("control_frequency", 10.));
     update_period_ = ros::Rate(control_frequency).expectedCycleTime();
-    const ros::Time now(toROSTime(model->GetWorld()->SimTime()));
+    const ros::Time now(lhg::SimTime(*model->GetWorld()));
     last_update_time_ = (now.toNSec() >= update_period_.toNSec())
                             ? now - update_period_
                             : ros::Time(0, 0); // ros::Time cannot be negative
@@ -68,10 +69,6 @@ private:
 
     // schedule the next update
     next_update_time_ += update_period_;
-  }
-
-  static ros::Time toROSTime(const common::Time &gz_time) {
-    return ros::Time(gz_time.sec, gz_time.nsec);
   }
 
 private:

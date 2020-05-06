@@ -18,6 +18,7 @@
 #include <layered_hardware_gazebo/posvel_pid_mode.hpp>
 #include <layered_hardware_gazebo/velocity_mode.hpp>
 #include <layered_hardware_gazebo/velocity_pid_mode.hpp>
+#include <layered_hardware_gazebo/wrap.hpp>
 #include <ros/duration.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
@@ -63,8 +64,7 @@ public:
     }
 
     // update joint operation mode (embedded controller) on every simulation step
-    const gzc::Time time(joint->GetWorld()->SimTime());
-    last_update_time_ = ros::Time(time.sec, time.nsec);
+    last_update_time_ = SimTime(*joint->GetWorld());
     update_connection_ =
         gze::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboJointDriver::update, this, _1));
     if (!update_connection_) {

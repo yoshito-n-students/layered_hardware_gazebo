@@ -5,6 +5,7 @@
 
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
+#include <layered_hardware_gazebo/wrap.hpp>
 #include <ros/duration.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
@@ -30,9 +31,9 @@ public:
 
   virtual bool init(const ros::NodeHandle &param_nh) {
     // update from params
-    offset_ = param_nh.param("mimic/offset", offset_);
-    multiplier_ = param_nh.param("mimic/multiplier", multiplier_);
-    mimic_joint_name_ = param_nh.param("mimic/joint", mimic_joint_name_);
+    offset_ = param(param_nh, "mimic/offset", offset_);
+    multiplier_ = param(param_nh, "mimic/multiplier", multiplier_);
+    mimic_joint_name_ = param(param_nh, "mimic/joint", mimic_joint_name_);
 
     // find the mimic joint
     mimic_joint_ = joint_->GetParent()->GetModel()->GetJoint(mimic_joint_name_);

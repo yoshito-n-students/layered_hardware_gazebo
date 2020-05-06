@@ -5,6 +5,7 @@
 
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
+#include <layered_hardware_gazebo/wrap.hpp>
 #include <ros/duration.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
