@@ -38,10 +38,20 @@ public:
 
   virtual ~GazeboJointDriver() {}
 
-  bool init(const std::string &name, const ros::NodeHandle &param_nh, const urdf::Joint &desc,
-            const gzp::JointPtr joint) {
+  bool init(const std::string &name, ti::RawJointData *const data, const ros::NodeHandle &param_nh,
+            const urdf::Joint &desc, const gzp::JointPtr joint) {
     name_ = name;
 
+    // init joint data
+#if GAZEBO_MAJOR_VERSION >= 8
+    data->position = joint->Position(0);
+#else
+    data->position = *(joint->GetAngle(0));
+#endif
+    data->velocity = joint->GetVelocity(0);
+    data->effort = joint->GetForce(0);
+
+    // make operation modes based on param
     typedef std::map< std::string, std::string > ControllerToModeName;
     ControllerToModeName controller_to_mode_name;
     if (!param_nh.getParam("operation_mode_map", controller_to_mode_name)) {
