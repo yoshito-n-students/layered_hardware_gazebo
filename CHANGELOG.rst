@@ -2,6 +2,10 @@
 Changelog for package layered_hardware_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.7 (next version)
+--------------------
+* Add fixed operation mode
+
 0.0.6 (2020-05-06)
 ------------------
 * Fix to compile on ROS kinetic
