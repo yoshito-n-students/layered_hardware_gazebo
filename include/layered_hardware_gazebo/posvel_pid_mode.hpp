@@ -54,8 +54,10 @@ public:
   }
 
   virtual void write(const ti::RawJointData &data) {
-    pos_goal_ = data.position_cmd;
-    vel_prof_ = std::abs(data.velocity_cmd);
+    if (!boost::math::isnan(data.position_cmd) && !boost::math::isnan(data.velocity_cmd)) {
+      pos_goal_ = data.position_cmd;
+      vel_prof_ = std::abs(data.velocity_cmd);
+    }
   }
 
   virtual void update(const ros::Time &time, const ros::Duration &period) {

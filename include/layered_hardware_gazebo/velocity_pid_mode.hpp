@@ -48,7 +48,11 @@ public:
     data->effort = joint_->GetForce(0);
   }
 
-  virtual void write(const ti::RawJointData &data) { vel_cmd_ = data.velocity_cmd; }
+  virtual void write(const ti::RawJointData &data) {
+    if (!boost::math::isnan(data.velocity_cmd)) {
+      vel_cmd_ = data.velocity_cmd;
+    }
+  }
 
   virtual void update(const ros::Time &time, const ros::Duration &period) {
     const double vel_err(vel_cmd_ - joint_->GetVelocity(0));

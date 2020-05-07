@@ -51,7 +51,11 @@ public:
     data->effort = joint_->GetForce(0);
   }
 
-  virtual void write(const ti::RawJointData &data) { pos_cmd_ = data.position_cmd; }
+  virtual void write(const ti::RawJointData &data) {
+    if (!boost::math::isnan(data.position_cmd)) {
+      pos_cmd_ = data.position_cmd;
+    }
+  }
 
   virtual void update(const ros::Time &time, const ros::Duration &period) {
     const double pos_err(pos_cmd_ - Position(*joint_, 0));

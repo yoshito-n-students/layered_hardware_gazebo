@@ -44,7 +44,9 @@ public:
   }
 
   virtual void write(const ti::RawJointData &data) {
-    eff_cmd_ = boost::algorithm::clamp(data.effort_cmd, -eff_lim_, eff_lim_);
+    if (!boost::math::isnan(data.effort_cmd)) {
+      eff_cmd_ = boost::algorithm::clamp(data.effort_cmd, -eff_lim_, eff_lim_);
+    }
   }
 
   virtual void update(const ros::Time &time, const ros::Duration &period) {
