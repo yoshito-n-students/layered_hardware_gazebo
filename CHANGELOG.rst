@@ -2,10 +2,10 @@
 Changelog for package layered_hardware_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.0.7 (next version)
---------------------
+0.0.7 (2020-05-08)
+------------------
 * Add fixed operation mode
-* Stop the joint when profile velocity of posvel operation modes is 0
+* Improve position tracking performance of posvel operation modes
 * Do not write NaN commands to operation modes
 
 0.0.6 (2020-05-06)
