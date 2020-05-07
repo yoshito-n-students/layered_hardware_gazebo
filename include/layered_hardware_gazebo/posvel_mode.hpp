@@ -37,8 +37,9 @@ public:
     const double pos(Position(*joint_, 0));
     // the latest position may be useful in the starting procedure of a pos-based controller
     data->position = pos;
-    pos_cmd_ = pos;
-    vel_lim_ = 0.;
+    pos_goal_ = pos;
+    pos_sp_ = pos;
+    vel_prof_ = 0.;
   }
 
   virtual void read(ti::RawJointData *const data) {
@@ -48,16 +49,17 @@ public:
   }
 
   virtual void write(const ti::RawJointData &data) {
-    pos_cmd_ = data.position_cmd;
-    vel_lim_ = std::abs(data.velocity_cmd);
+    pos_goal_ = data.position_cmd;
+    vel_prof_ = std::abs(data.velocity_cmd);
   }
 
   virtual void update(const ros::Time &time, const ros::Duration &period) {
-    // velocity required to realize the desired position in the next simulation step
-    const double vel_max((pos_cmd_ - Position(*joint_, 0)) / period.toSec());
-    // clamp the required velocity with the limits
-    const double vel_cmd(boost::algorithm::clamp(vel_max, -vel_lim_, vel_lim_));
+    // update the position setpoint
+    const double dpos_sp_lim(vel_prof_ * period.toSec());
+    pos_sp_ += boost::algorithm::clamp(pos_goal_ - pos_sp_, -dpos_sp_lim, dpos_sp_lim);
 
+    // track the position setpoint
+    const double vel_cmd((pos_sp_ - Position(*joint_, 0)) / period.toSec());
     if (!boost::math::isnan(vel_cmd)) {
       // use SetParam("vel") instead of SetVelocity()
       // to notify the desired velocity to the joint motor
@@ -73,7 +75,7 @@ public:
 
 private:
   const double eff_lim_;
-  double pos_cmd_, vel_lim_;
+  double pos_goal_, pos_sp_, vel_prof_;
 };
 } // namespace layered_hardware_gazebo
 
