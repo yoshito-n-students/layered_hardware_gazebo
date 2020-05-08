@@ -44,6 +44,18 @@ public:
             const gzp::JointPtr joint) {
     name_ = name;
 
+    // apply the initial position
+    double initial_position;
+    if (param_nh.getParam("initial_position", initial_position)) {
+      // clamp the initial position by joint limits ??
+      if (!SetPosition(joint, 0, initial_position, /* preserve_world_velocity = */ true)) {
+        ROS_ERROR_STREAM(
+            "GazeboJointDriver::init(): Failed to set the initial position of the joint '"
+            << name << "' to " << initial_position);
+        return false;
+      }
+    }
+
     // make operation modes based on param
     typedef std::map< std::string, std::string > ControllerToModeName;
     ControllerToModeName controller_to_mode_name;

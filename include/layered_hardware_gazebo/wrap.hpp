@@ -32,6 +32,15 @@ static inline double Position(const gzp::Joint &joint, const unsigned int index)
 #endif
 }
 
+static inline bool SetPosition(const gzp::JointPtr joint, const unsigned int index,
+                               const double position, const bool preserve_world_velocity = false) {
+#if GAZEBO_MAJOR_VERSION >= 8
+  return joint->SetPosition(index, position, preserve_world_velocity);
+#else
+  return joint->SetPosition(index, position);
+#endif
+}
+
 static inline ros::Time SimTime(const gzp::World &world) {
 #if GAZEBO_MAJOR_VERSION >= 8
   const gzc::Time time(world.SimTime());

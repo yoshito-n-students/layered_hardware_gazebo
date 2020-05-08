@@ -38,5 +38,8 @@ ___operation_mode_map___ (map<string, string>, required)
 ___mimic_pid___, ___position_pid___, ___posvel_pid___, ___velocity_pid___ (struct, required when corresponding modes are used)
 * PID parameters which can be loaded by control_toolbox::Pid
 
+___initial_position___ (double, optional)
+* initial position of the joint
+
 ## Example
 see [launch/single_joint_example.launch](launch/single_joint_example.launch)
