@@ -2,8 +2,8 @@
 Changelog for package layered_hardware_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.0.8 (next version)
---------------------
+0.0.8 (2020-05-09)
+------------------
 * Support setting the initial position of joints
 * Add fixed_pid operation mode
 
