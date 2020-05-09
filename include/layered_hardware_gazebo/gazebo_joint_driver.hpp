@@ -9,6 +9,7 @@
 #include <layered_hardware_gazebo/common_namespaces.hpp>
 #include <layered_hardware_gazebo/effort_mode.hpp>
 #include <layered_hardware_gazebo/fixed_mode.hpp>
+#include <layered_hardware_gazebo/fixed_pid_mode.hpp>
 #include <layered_hardware_gazebo/mimic_mode.hpp>
 #include <layered_hardware_gazebo/mimic_pid_mode.hpp>
 #include <layered_hardware_gazebo/operation_mode_base.hpp>
@@ -194,6 +195,8 @@ private:
       mode.reset(new EffortMode(desc, joint));
     } else if (mode_str == "fixed") {
       mode.reset(new FixedMode(desc, joint));
+    } else if (mode_str == "fixed_pid") {
+      mode.reset(new FixedPIDMode(desc, joint));
     } else if (mode_str == "mimic") {
       mode.reset(new MimicMode(desc, joint));
     } else if (mode_str == "mimic_pid") {
