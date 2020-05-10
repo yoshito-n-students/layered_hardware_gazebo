@@ -24,15 +24,15 @@ static T param(const ros::NodeHandle &nh, const std::string &key, const T &defau
   return val;
 }
 
-static inline double Position(const gzp::Joint &joint, const unsigned int index) {
+static inline double Position(const gzp::JointPtr &joint, const unsigned int index) {
 #if GAZEBO_MAJOR_VERSION >= 8
-  return joint.Position(index);
+  return joint->Position(index);
 #else
-  return *(joint.GetAngle(index));
+  return *(joint->GetAngle(index));
 #endif
 }
 
-static inline bool SetPosition(const gzp::JointPtr joint, const unsigned int index,
+static inline bool SetPosition(const gzp::JointPtr &joint, const unsigned int index,
                                const double position, const bool preserve_world_velocity = false) {
 #if GAZEBO_MAJOR_VERSION >= 8
   return joint->SetPosition(index, position, preserve_world_velocity);
@@ -41,11 +41,11 @@ static inline bool SetPosition(const gzp::JointPtr joint, const unsigned int ind
 #endif
 }
 
-static inline ros::Time SimTime(const gzp::World &world) {
+static inline ros::Time SimTime(const gzp::WorldPtr &world) {
 #if GAZEBO_MAJOR_VERSION >= 8
-  const gzc::Time time(world.SimTime());
+  const gzc::Time time(world->SimTime());
 #else
-  const gzc::Time time(world.GetSimTime());
+  const gzc::Time time(world->GetSimTime());
 #endif
   return ros::Time(time.sec, time.nsec);
 }

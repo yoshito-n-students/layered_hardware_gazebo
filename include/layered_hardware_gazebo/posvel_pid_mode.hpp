@@ -37,7 +37,7 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 0.);
 
-    const double pos(Position(*joint_, 0));
+    const double pos(Position(joint_, 0));
     // the latest position may be useful in the starting procedure of a pos-based controller
     data->position = pos;
     pos_goal_ = pos;
@@ -48,7 +48,7 @@ public:
   }
 
   virtual void read(ti::RawJointData *const data) {
-    data->position = Position(*joint_, 0);
+    data->position = Position(joint_, 0);
     data->velocity = joint_->GetVelocity(0);
     data->effort = joint_->GetForce(0);
   }
@@ -68,7 +68,7 @@ public:
     pos_sp_ += ba::clamp(pos_goal_ - pos_sp_, -dpos_sp_lim, dpos_sp_lim);
 
     // track the position setpoint
-    const double pos_err(pos_sp_ - Position(*joint_, 0));
+    const double pos_err(pos_sp_ - Position(joint_, 0));
     const double eff_cmd(ba::clamp(pid_.computeCommand(pos_err, period), -eff_lim_, eff_lim_));
     if (!boost::math::isnan(eff_cmd)) {
       joint_->SetForce(0, eff_cmd);

@@ -39,7 +39,7 @@ public:
     // schedule controllers' & layers' update
     const double control_frequency(pnh.param("control_frequency", 10.));
     update_period_ = ros::Rate(control_frequency).expectedCycleTime();
-    const ros::Time now(lhg::SimTime(*model->GetWorld()));
+    const ros::Time now(lhg::SimTime(model->GetWorld()));
     last_update_time_ = (now.toNSec() >= update_period_.toNSec())
                             ? now - update_period_
                             : ros::Time(0, 0); // ros::Time cannot be negative

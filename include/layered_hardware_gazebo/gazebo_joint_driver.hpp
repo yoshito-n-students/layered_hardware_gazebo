@@ -78,7 +78,7 @@ public:
     }
 
     // update joint operation mode (embedded controller) on every simulation step
-    last_update_time_ = SimTime(*joint->GetWorld());
+    last_update_time_ = SimTime(joint->GetWorld());
     update_connection_ =
         gze::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboJointDriver::update, this, _1));
     if (!update_connection_) {

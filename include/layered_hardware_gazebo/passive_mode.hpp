@@ -28,7 +28,7 @@ public:
   }
 
   virtual void read(ti::RawJointData *const data) {
-    data->position = Position(*joint_, 0);
+    data->position = Position(joint_, 0);
     data->velocity = joint_->GetVelocity(0);
     data->effort = joint_->GetForce(0);
   }

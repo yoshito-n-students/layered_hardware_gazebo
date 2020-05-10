@@ -37,7 +37,7 @@ public:
     // (TODO: specialization for other physics engines)
     joint_->SetParam("fmax", 0, 0.);
 
-    const double pos(Position(*joint_, 0));
+    const double pos(Position(joint_, 0));
     // the latest position may be useful in the starting procedure of a pos-based controller
     data->position = pos;
     pos_cmd_ = pos;
@@ -46,7 +46,7 @@ public:
   }
 
   virtual void read(ti::RawJointData *const data) {
-    data->position = Position(*joint_, 0);
+    data->position = Position(joint_, 0);
     data->velocity = joint_->GetVelocity(0);
     data->effort = joint_->GetForce(0);
   }
@@ -58,7 +58,7 @@ public:
   }
 
   virtual void update(const ros::Time &time, const ros::Duration &period) {
-    const double pos_err(pos_cmd_ - Position(*joint_, 0));
+    const double pos_err(pos_cmd_ - Position(joint_, 0));
     const double eff_cmd(
         boost::algorithm::clamp(pid_.computeCommand(pos_err, period), -eff_lim_, eff_lim_));
     if (!boost::math::isnan(eff_cmd)) {
