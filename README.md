@@ -8,12 +8,13 @@ See [layered_hardware](https://github.com/yoshito-n-students/layered_hardware) t
 
 Several features missing in the [gazebo_ros_control](https://github.com/ros-simulation/gazebo_ros_pkgs) package has been supported.
 
-|                                | This pkg                    | gazebo_ros_control            |
-| ---                            | ---                         | ---                           |
-| Types of joint hw interface    | Any                         | Pos, Vel, or Eff              |
-| Num of hw interfaces per joint | 1+                          | 1                             |
-| Joint operation modes          | 10+ (including mimic modes) | 4 (pos, pos_pid, vel, or eff) |
-| Initial joint position config  | Yes                         | No                            |
+|                                | This pkg           | gazebo_ros_control            |
+| ---                            | ---                | ---                           |
+| Types of joint hw interface    | Any                | Pos, Vel, or Eff              |
+| Num of hw interfaces per joint | 1+                 | 1                             |
+| Joint operation modes | 10+ (including mimic modes) | 4 (pos, pos_pid, vel, or eff) |
+| Online switching of joint operation modes | Yes     | No                            |
+| Initial joint position config  | Yes                | No                            |
 
 ## GazeboLayeredHardware
 * a layered_hardware node running on a robot in the Gazebo simulator (as a Gazebo's model plugin)
