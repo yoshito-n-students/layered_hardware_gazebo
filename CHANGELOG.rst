@@ -2,6 +2,10 @@
 Changelog for package layered_hardware_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.9 (next version)
+--------------------
+* Feature comparison to gazebo_ros_control in README
+
 0.0.8 (2020-05-09)
 ------------------
 * Support setting the initial position of joints
